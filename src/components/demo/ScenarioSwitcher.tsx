@@ -32,18 +32,18 @@ export const ScenarioSwitcher: React.FC<Props> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
         
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between gap-2 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">Evaluator Demonstration Scenarios</h3>
-              <p className="text-xs text-slate-500">Six test fixtures specified in Section 14 to verify edge cases</p>
+              <p className="hidden sm:block text-xs text-slate-500">Six test fixtures specified in Section 14 to verify edge cases</p>
             </div>
           </div>
           <button 
@@ -55,7 +55,7 @@ export const ScenarioSwitcher: React.FC<Props> = ({
         </div>
 
         {/* Live Reset Button Banner */}
-        <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
+        <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span className="text-xs text-emerald-950 font-medium">
             Currently running in <strong>{activeScenarioId ? 'Demo Scenario Mode' : 'Live Real-Time Telemetry Mode'}</strong>
           </span>
@@ -73,7 +73,7 @@ export const ScenarioSwitcher: React.FC<Props> = ({
         </div>
 
         {/* Scenarios Grid */}
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
           {DEMO_SCENARIOS.map((sc) => {
             const Icon = getScenarioIcon(sc.id);
             const isSelected = activeScenarioId === sc.id;
@@ -119,7 +119,7 @@ export const ScenarioSwitcher: React.FC<Props> = ({
         </div>
 
         {/* Footer Notice */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500">
+        <div className="px-4 sm:px-6 py-4 bg-slate-50 border-t border-slate-100 text-[11px] text-slate-500">
           * These fixtures test personalization, API timeouts, missing stations, and hybrid AI fallbacks without altering the live telemetry engine.
         </div>
 

@@ -64,7 +64,7 @@ export const Navigation: React.FC<NavigationProps> = ({ activeTab, onTabChange }
       </nav>
 
       {/* Mobile bottom bar — every feature one thumb-tap away */}
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-7">
           {TABS.map((tab) => {
             const Icon = tab.icon;

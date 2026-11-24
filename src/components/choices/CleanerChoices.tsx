@@ -127,18 +127,18 @@ export const CleanerChoices: React.FC<Props> = ({ airQuality, onSelectAction }) 
             {/* Habitual vs cleaner bars */}
             <div className="mt-4 space-y-2.5">
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                  <span>Now: {choice.habitualChoice.label}</span>
-                  <span className="font-mono">{habitualAnnual.toLocaleString()} kg</span>
+                <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 mb-0.5">
+                  <span className="truncate">Now: {choice.habitualChoice.label}</span>
+                  <span className="shrink-0 font-mono">{habitualAnnual.toLocaleString()} kg</span>
                 </div>
                 <div className="h-2.5 bg-rose-100 rounded-full overflow-hidden">
                   <div className="h-full bg-rose-500 rounded-full" style={{ width: '100%' }} />
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-[10px] text-slate-500 mb-0.5">
-                  <span>Swap: {choice.cleanerAlternative.label}</span>
-                  <span className="font-mono">{cleanerAnnual.toLocaleString()} kg</span>
+                <div className="flex items-center justify-between gap-2 text-[10px] text-slate-500 mb-0.5">
+                  <span className="truncate">Swap: {choice.cleanerAlternative.label}</span>
+                  <span className="shrink-0 font-mono">{cleanerAnnual.toLocaleString()} kg</span>
                 </div>
                 <div className="h-2.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
@@ -189,7 +189,7 @@ export const CleanerChoices: React.FC<Props> = ({ airQuality, onSelectAction }) 
 
       {/* Habits */}
       <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-1">
           <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Four habits that cost nothing</h3>
           <span className="text-[10px] text-slate-400">No purchase, no app</span>
         </div>

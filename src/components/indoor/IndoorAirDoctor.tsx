@@ -152,7 +152,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.kitchenExhaust}
               onChange={(e) => setAnswers({ ...answers, kitchenExhaust: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="chimney_hepa">Ducted chimney (strong extraction)</option>
               <option value="exhaust_fan">Wall exhaust fan</option>
@@ -166,7 +166,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.incenseOrCoils}
               onChange={(e) => setAnswers({ ...answers, incenseOrCoils: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="none">None indoors</option>
               <option value="festivals_only">Festivals only</option>
@@ -180,7 +180,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.dampnessOrMould}
               onChange={(e) => setAnswers({ ...answers, dampnessOrMould: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="none">None</option>
               <option value="musty_smell">Musty smell in monsoon</option>
@@ -194,7 +194,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.vacuumHabits}
               onChange={(e) => setAnswers({ ...answers, vacuumHabits: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="hepa_vacuum">HEPA vacuum</option>
               <option value="regular_sweep_mop">Broom + wet mop</option>
@@ -207,7 +207,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.indoorSmoking}
               onChange={(e) => setAnswers({ ...answers, indoorSmoking: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="none">Smoke-free home</option>
               <option value="occasional">Occasional, on balcony</option>
@@ -220,7 +220,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             <select
               value={answers.windowHabits}
               onChange={(e) => setAnswers({ ...answers, windowHabits: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="ventilate_when_clean">Timed, during clean hours</option>
               <option value="always_open">Open all day and night</option>
@@ -230,7 +230,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
           </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-slate-600">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[11px] text-slate-600">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -249,7 +249,7 @@ export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) =
             />
             <span>Pets at home</span>
           </label>
-          <span className="ml-auto flex items-center gap-1 text-emerald-700 font-semibold">
+          <span className="sm:ml-auto flex items-center gap-1 text-emerald-700 font-semibold">
             <Wind className="w-3.5 h-3.5" /> Results update live
           </span>
         </div>

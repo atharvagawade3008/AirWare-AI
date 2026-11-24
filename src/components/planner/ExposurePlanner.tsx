@@ -55,7 +55,7 @@ export const ExposurePlanner: React.FC<Props> = ({ slots, profile }) => {
         </p>
 
         {/* Timeline */}
-        <div className="mt-5 grid grid-cols-4 gap-2">
+        <div className="mt-5 grid grid-cols-4 gap-1.5 sm:gap-2">
           {slots.map((slot) => {
             const weight = RISK_WEIGHT[slot.expectedRisk] ?? 2;
             const Icon = getSlotIcon(slot.timeOfDay);

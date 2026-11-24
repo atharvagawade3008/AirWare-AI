@@ -153,15 +153,15 @@ export default function App() {
 
       {/* Demo Scenario Notification Banner */}
       {activeScenario && (
-        <div className="bg-amber-500 text-amber-950 px-4 py-2 border-b border-amber-600/20 text-xs font-semibold flex items-center justify-between">
-          <div className="max-w-7xl mx-auto w-full flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-amber-950 shrink-0" />
-              <span><strong>Evaluator Test Mode Active:</strong> {activeScenario.name} ({activeScenario.expectedOutcome})</span>
+        <div className="bg-amber-500 text-amber-950 px-4 py-2 border-b border-amber-600/20 text-xs font-semibold">
+          <div className="max-w-7xl mx-auto w-full flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="flex items-start sm:items-center gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 text-amber-950 shrink-0 mt-0.5 sm:mt-0" />
+              <span className="leading-snug"><strong>Evaluator Test Mode Active:</strong> {activeScenario.name} ({activeScenario.expectedOutcome})</span>
             </div>
             <button
               onClick={handleResetToLive}
-              className="px-2.5 py-1 bg-amber-950 text-white rounded-lg text-[11px] font-bold hover:bg-black transition-colors"
+              className="self-start sm:self-auto shrink-0 px-2.5 py-1 bg-amber-950 text-white rounded-lg text-[11px] font-bold hover:bg-black transition-colors"
             >
               Back to Live Data
             </button>
@@ -173,11 +173,11 @@ export default function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-24 sm:pb-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-28 sm:pb-8">
         
         {/* Error Notification Banner if API failed */}
         {dataError && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex items-start justify-between gap-3 text-xs text-rose-900 shadow-xs">
+          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs text-rose-900 shadow-xs">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div>
@@ -190,7 +190,7 @@ export default function App() {
             {!activeScenario && (
               <button
                 onClick={() => loadLiveData(selectedCity.lat, selectedCity.lon, selectedCity.name, selectedCity.state)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-xl font-bold shrink-0 transition-colors"
+                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-xl font-bold shrink-0 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
@@ -231,7 +231,7 @@ export default function App() {
 
             {/* Key Pollutant Snapshots */}
             <div>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-3">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Live Pollutant Highlights</h3>
                 <button
                   onClick={() => setActiveTab('air-quality')}
@@ -283,7 +283,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-12 pt-8 pb-24 sm:pb-8 text-xs text-slate-500">
+      <footer className="bg-white border-t border-slate-200 mt-12 pt-8 pb-28 sm:pb-8 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800">AirAware AI</span>

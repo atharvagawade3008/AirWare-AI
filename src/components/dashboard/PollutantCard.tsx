@@ -25,7 +25,7 @@ export const PollutantCard: React.FC<Props> = ({ pollutant }) => {
   return (
     <div className="bg-white rounded-xl p-4 border border-slate-200 shadow-sm hover:border-slate-300 transition-all flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-start justify-between gap-1">
           <span className="text-xs font-bold text-slate-500 tracking-wide">{chemicalFormula}</span>
           {subIndex !== undefined && (
             <span 

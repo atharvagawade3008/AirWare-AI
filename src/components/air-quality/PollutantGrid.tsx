@@ -53,7 +53,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
     <div className="space-y-6">
       
       {/* Title & Attribution Header */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
@@ -62,7 +62,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
               {dataType === 'modelled_estimate' ? 'Atmospheric Model Estimates' : 'Station Observations'}
             </span>
           </div>
-          <h2 className="text-xl font-extrabold text-slate-900 tracking-tight font-sans">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight font-sans">
             Pollutant Concentration Telemetry — {location}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
@@ -113,15 +113,21 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
           <div className="mt-4 space-y-2">
             {aqiDrivers.map((d) => (
               <div key={d.code} className="flex items-center gap-2">
-                <span className="w-14 shrink-0 text-[11px] font-bold text-slate-700">{d.code}</span>
-                <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
-                    style={{ width: `${Math.min(100, (d.subIndex / 500) * 100)}%`, backgroundColor: d.color }}
-                  />
+                <span className="w-12 sm:w-14 shrink-0 text-[11px] font-bold text-slate-700">{d.code}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="h-4 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${Math.min(100, (d.subIndex / 500) * 100)}%`, backgroundColor: d.color }}
+                    />
+                  </div>
+                  <div className="mt-0.5 flex items-center justify-between gap-2 text-[9px] font-bold uppercase sm:hidden">
+                    <span className="truncate text-slate-400">{d.category}</span>
+                    {d.isMax && <span className="shrink-0 text-rose-700">drives AQI</span>}
+                  </div>
                 </div>
-                <span className="w-10 shrink-0 text-right text-[11px] font-mono font-bold text-slate-800">{d.subIndex}</span>
-                <span className={`w-16 shrink-0 text-[9px] font-bold uppercase ${d.isMax ? 'text-rose-700' : 'text-slate-400'}`}>
+                <span className="w-9 shrink-0 text-right text-[11px] font-mono font-bold text-slate-800">{d.subIndex}</span>
+                <span className={`hidden sm:block w-16 shrink-0 truncate text-[9px] font-bold uppercase ${d.isMax ? 'text-rose-700' : 'text-slate-400'}`}>
                   {d.isMax ? 'drives AQI' : d.category}
                 </span>
               </div>
@@ -139,7 +145,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
 
       {/* 24-Hour Particulate Concentration Trend */}
       {chartData.length > 0 && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
               <h3 className="text-sm font-bold text-slate-900">24-Hour Particulate Profile (PM2.5 vs PM10)</h3>
@@ -189,7 +195,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
       )}
 
       {/* Methodology & Health Impact Standard Reference */}
-      <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-xs text-slate-600 space-y-3">
+      <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200 text-xs text-slate-600 space-y-3">
         <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-emerald-700" />
           <span>CPCB NAQI Methodology & Data Integrity Standard</span>

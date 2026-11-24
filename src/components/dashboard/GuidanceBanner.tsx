@@ -28,7 +28,7 @@ export const GuidanceBanner: React.FC<Props> = ({ guidance, profile, onOpenProfi
         
         {/* Left Headline */}
         <div className="flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="px-2 py-0.5 text-[11px] font-bold uppercase rounded-md bg-white border border-slate-200 text-slate-800 shadow-xs">
               Tailored For {profile.name}
             </span>
@@ -53,10 +53,10 @@ export const GuidanceBanner: React.FC<Props> = ({ guidance, profile, onOpenProfi
         </div>
 
         {/* Right CTA */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex w-full sm:w-auto items-center gap-2 shrink-0">
           <button
             onClick={onNavigateToPlanner}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-forest-900 text-white rounded-xl hover:bg-forest-800 transition-colors shadow-sm"
+            className="flex w-full sm:w-auto items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-forest-900 text-white rounded-xl hover:bg-forest-800 transition-colors shadow-sm"
           >
             <span>View 24h Planner</span>
             <ArrowRight className="w-3.5 h-3.5" />

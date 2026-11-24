@@ -73,7 +73,7 @@ export const WhatIfCalculator: React.FC = () => {
             <select
               value={input.baseTransport}
               onChange={(e) => setInput({ ...input, baseTransport: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="petrol_car">Solo petrol car</option>
               <option value="diesel_car">Solo diesel SUV / sedan</option>
@@ -87,7 +87,7 @@ export const WhatIfCalculator: React.FC = () => {
             <select
               value={input.targetTransport}
               onChange={(e) => setInput({ ...input, targetTransport: e.target.value as any })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
+              className="w-full max-w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
               <option value="electric_bus_metro">Metro / electric city bus</option>
               <option value="carpool">Carpool (3 occupants)</option>

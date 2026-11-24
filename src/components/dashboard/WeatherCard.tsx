@@ -20,7 +20,7 @@ export const WeatherCard: React.FC<Props> = ({ weather }) => {
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider">
             <Wind className="w-4 h-4 text-sky-600" />
             <span>Atmospheric Dispersion</span>

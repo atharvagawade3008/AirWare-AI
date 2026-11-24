@@ -26,8 +26,8 @@ export const DonutChart: React.FC<Props> = ({ data, centerValue, centerLabel, si
   const total = visible.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-4">
-      <div className="relative shrink-0" style={{ width: size, height: size }}>
+    <div className="flex w-full flex-col sm:flex-row items-center gap-3 sm:gap-4">
+      <div className="relative shrink-0 aspect-square" style={{ width: size, maxWidth: '100%' }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

@@ -21,18 +21,18 @@ export const FamilyProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, 
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200">
         
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-slate-100 px-6 py-4 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white border-b border-slate-100 px-4 sm:px-6 py-4 flex items-center justify-between gap-2 z-10">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-forest-100 text-forest-800 flex items-center justify-center">
               <Users className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-base">Household Exposure Profile</h3>
-              <p className="text-xs text-slate-500">Recommendations dynamically adapt to these characteristics</p>
+              <p className="hidden sm:block text-xs text-slate-500">Recommendations dynamically adapt to these characteristics</p>
             </div>
           </div>
           <button 
@@ -44,7 +44,7 @@ export const FamilyProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, 
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-6">
           
           {/* General Household Info */}
           <div>
@@ -223,7 +223,7 @@ export const FamilyProfileModal: React.FC<Props> = ({ isOpen, onClose, profile, 
           </div>
 
           {/* Footer Action */}
-          <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+          <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-end gap-3">
             <button
               type="button"
               onClick={onClose}

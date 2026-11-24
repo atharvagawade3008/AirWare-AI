@@ -55,7 +55,7 @@ export const CommunityImpact: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
         <div className="flex items-center gap-2 text-forest-800 text-xs font-bold uppercase tracking-wider">
           <UsersRound className="w-4 h-4 text-emerald-600" />
           <span>Community Impact — Collective Environmental Responsibility</span>
@@ -80,7 +80,7 @@ export const CommunityImpact: React.FC = () => {
               }`}
             >
               <div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
                     {pledge.category}
                   </span>
@@ -116,7 +116,7 @@ export const CommunityImpact: React.FC = () => {
       </div>
 
       {/* Community Education Note */}
-      <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-xs text-slate-600 space-y-2">
+      <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200 text-xs text-slate-600 space-y-2">
         <div className="font-bold text-slate-800 flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-emerald-700" />
           <span>Evidence-Based Community Engagement</span>

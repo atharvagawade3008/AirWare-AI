@@ -138,8 +138,8 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
         </div>
 
         {/* Big AQI Number */}
-        <div className="mt-5 flex items-baseline gap-4">
-          <span className="text-6xl font-extrabold tracking-tight font-sans" style={{ color }}>
+        <div className="mt-5 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className="text-5xl sm:text-6xl font-extrabold tracking-tight font-sans" style={{ color }}>
             {aqi}
           </span>
           <div>

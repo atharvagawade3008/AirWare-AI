@@ -120,7 +120,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             Tailored to {profile.name} · {airQuality.location} · commute by {profile.commuteType.replace(/_/g, ' ')}
           </p>
         </div>
-        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tap any card to open it</span>
+        <span className="hidden sm:inline text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tap any card to open it</span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -247,7 +247,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
               const isLow = mode.factor <= EMISSION_FACTORS.metroElectricBusKgCo2PerKm;
               return (
                 <div key={mode.label} className="flex items-center gap-2">
-                  <span className="w-20 text-[10px] text-slate-600 truncate">{mode.label}</span>
+                  <span className="w-16 sm:w-20 text-[10px] text-slate-600 truncate">{mode.label}</span>
                   <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full"
@@ -274,7 +274,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
       </div>
 
       {/* DIRECT IMPACT OF THESE CHOICES */}
-      <div className="bg-forest-950 rounded-2xl p-5 sm:p-6 text-white shadow-sm">
+      <div className="bg-forest-950 rounded-2xl p-4 sm:p-6 text-white shadow-sm">
         <div className="flex flex-col lg:flex-row gap-6">
           <div className="lg:w-2/5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300">Direct impact of these choices</span>
@@ -297,25 +297,25 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             </div>
           </div>
 
-          <div className="lg:w-3/5 grid grid-cols-2 gap-3 self-center">
+          <div className="lg:w-3/5 grid grid-cols-2 gap-2 sm:gap-3 self-center">
             <div className="bg-white/10 rounded-xl p-3.5 border border-white/10">
               <TrendingDown className="w-4 h-4 text-emerald-300" />
-              <div className="text-2xl font-extrabold mt-1.5">{avoided.toLocaleString()}</div>
+              <div className="text-xl sm:text-2xl font-extrabold mt-1.5 break-words">{avoided.toLocaleString()}</div>
               <div className="text-[10px] text-emerald-100/80">kg CO₂e avoided / year</div>
             </div>
             <div className="bg-white/10 rounded-xl p-3.5 border border-white/10">
               <Trees className="w-4 h-4 text-emerald-300" />
-              <div className="text-2xl font-extrabold mt-1.5">~{Math.round(avoided / 22)}</div>
+              <div className="text-xl sm:text-2xl font-extrabold mt-1.5 break-words">~{Math.round(avoided / 22)}</div>
               <div className="text-[10px] text-emerald-100/80">mature trees equivalent</div>
             </div>
             <div className="bg-white/10 rounded-xl p-3.5 border border-white/10">
               <IndianRupee className="w-4 h-4 text-emerald-300" />
-              <div className="text-2xl font-extrabold mt-1.5">{impact.fuelCostSavedInrAnnual.toLocaleString()}</div>
+              <div className="text-xl sm:text-2xl font-extrabold mt-1.5 break-words">{impact.fuelCostSavedInrAnnual.toLocaleString()}</div>
               <div className="text-[10px] text-emerald-100/80">fuel saved / year (₹)</div>
             </div>
             <div className="bg-white/10 rounded-xl p-3.5 border border-white/10">
               <Route className="w-4 h-4 text-emerald-300" />
-              <div className="text-2xl font-extrabold mt-1.5">{impact.co2EquivalentKmDriven.toLocaleString()}</div>
+              <div className="text-xl sm:text-2xl font-extrabold mt-1.5 break-words">{impact.co2EquivalentKmDriven.toLocaleString()}</div>
               <div className="text-[10px] text-emerald-100/80">car km avoided / year</div>
             </div>
             <button
