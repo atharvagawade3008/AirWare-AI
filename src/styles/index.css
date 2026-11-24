@@ -13,9 +13,37 @@
     /* Safety net: no page-level sideways scroll on phones. */
     overflow-x: clip;
   }
+  html.dark {
+    color-scheme: dark;
+  }
+  .dark body {
+    @apply bg-slate-950 text-slate-100;
+  }
 }
 
-/* Hide scrollbar for clean horizontal tabs */
+/* Recharts axes/gridlines follow the active theme. */
+:root {
+  --chart-axis: #64748b;
+  --chart-grid: #f1f5f9;
+}
+html.dark {
+  --chart-axis: #94a3b8;
+  --chart-grid: #1e293b;
+}
+
+/* Smooth, non-janky theme transitions on color/background/border only (avoid animating layout/aqi bars). */
+html.transitioning *,
+html.transitioning *::before,
+html.transitioning *::after {
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, fill 180ms ease, stroke 180ms ease;
+}
+
+/* Keep the AQI fill bars and donut cells instant (data-driven, not theme-driven). */
+html.transitioning [style*="background-color"],
+html.transitioning [style*="background"] {
+  transition: none !important;
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
