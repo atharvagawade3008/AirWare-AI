@@ -4,7 +4,6 @@ import { Navigation, ActiveTab } from './components/layout/Navigation.tsx';
 import { AQIGauge } from './components/dashboard/AQIGauge.tsx';
 import { WeatherCard } from './components/dashboard/WeatherCard.tsx';
 import { GuidanceBanner } from './components/dashboard/GuidanceBanner.tsx';
-import { QuickActions } from './components/dashboard/QuickActions.tsx';
 import { PollutantCard } from './components/dashboard/PollutantCard.tsx';
 import { PollutantGrid } from './components/air-quality/PollutantGrid.tsx';
 import { ExposurePlanner } from './components/planner/ExposurePlanner.tsx';
@@ -15,6 +14,7 @@ import { CommunityImpact } from './components/community/CommunityImpact.tsx';
 import { AIChatDrawer } from './components/assistant/AIChatDrawer.tsx';
 import { FamilyProfileModal } from './components/profile/FamilyProfileModal.tsx';
 import { ScenarioSwitcher } from './components/demo/ScenarioSwitcher.tsx';
+import { ActionPlan } from './components/plan/ActionPlan.tsx';
 
 import { AirQualityContext, HourlyForecastPoint } from './types/air-quality.ts';
 import { WeatherContext } from './types/weather.ts';
@@ -173,7 +173,7 @@ export default function App() {
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-8 pb-24 sm:pb-8">
         
         {/* Error Notification Banner if API failed */}
         {dataError && (
@@ -211,6 +211,14 @@ export default function App() {
               onNavigateToPlanner={() => setActiveTab('planner')}
             />
 
+            {/* Highlighted capability pillars + direct impact */}
+            <ActionPlan
+              airQuality={effectiveAQI}
+              profile={profile}
+              slots={exposurePlanner}
+              onNavigate={setActiveTab}
+            />
+
             {/* AQI Gauge + Weather Atmospheric Dispersion */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
               <div className="lg:col-span-7">
@@ -219,14 +227,6 @@ export default function App() {
               <div className="lg:col-span-5">
                 <WeatherCard weather={weather || undefined} />
               </div>
-            </div>
-
-            {/* Quick Actions Grid */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Decision Support Tools</h3>
-              </div>
-              <QuickActions onNavigate={setActiveTab} onOpenAI={() => setIsAIChatOpen(true)} />
             </div>
 
             {/* Key Pollutant Snapshots */}
@@ -262,7 +262,7 @@ export default function App() {
 
         {/* Tab 4: INDOOR AIR DOCTOR */}
         {activeTab === 'indoor' && (
-          <IndoorAirDoctor />
+          <IndoorAirDoctor airQuality={effectiveAQI} onBackToPlan={() => setActiveTab('overview')} />
         )}
 
         {/* Tab 5: CLEANER CHOICES (Commute & Lifestyle) */}
@@ -283,7 +283,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-12 py-8 text-xs text-slate-500">
+      <footer className="bg-white border-t border-slate-200 mt-12 pt-8 pb-24 sm:pb-8 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <span className="font-bold text-slate-800">AirAware AI</span>

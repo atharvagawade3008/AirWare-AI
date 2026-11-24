@@ -15,6 +15,7 @@ export interface IndoorQuestionnaireAnswers {
 export interface IndoorAssessmentResult {
   score: number; // 0 (best) to 100 (high risk)
   riskLevel: 'Low Hazard' | 'Moderate Hazard' | 'High Hazard' | 'Critical Hazard';
+  breakdown?: { label: string; points: number }[]; // additive points per hazard source
   primaryHazards: {
     title: string;
     description: string;

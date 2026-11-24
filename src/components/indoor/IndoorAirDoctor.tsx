@@ -1,8 +1,18 @@
-import React, { useState } from 'react';
-import { IndoorQuestionnaireAnswers, IndoorAssessmentResult } from '../../types/indoor.ts';
-import { ShieldCheck, AlertTriangle, CheckCircle2, Info, Sparkles, Wind, Flame, Home, Stethoscope } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { IndoorQuestionnaireAnswers } from '../../types/indoor.ts';
+import { AirQualityContext } from '../../types/air-quality.ts';
+import { assessIndoorAir } from '../../intelligence/indoor/indoor-engine.ts';
+import { DonutChart } from '../visuals/DonutChart.tsx';
+import { AlertTriangle, CheckCircle2, Info, Wind, Home, Stethoscope, ArrowLeft } from 'lucide-react';
 
-export const IndoorAirDoctor: React.FC = () => {
+interface Props {
+  airQuality?: AirQualityContext;
+  onBackToPlan?: () => void;
+}
+
+const HAZARD_COLORS = ['#94A3B8', '#F97316', '#DC2626', '#7C3AED', '#0EA5E9', '#F59E0B', '#10B981', '#64748B'];
+
+export const IndoorAirDoctor: React.FC<Props> = ({ airQuality, onBackToPlan }) => {
   const [answers, setAnswers] = useState<IndoorQuestionnaireAnswers>({
     cookingFuel: 'piped_gas',
     kitchenExhaust: 'exhaust_fan',
@@ -16,321 +26,308 @@ export const IndoorAirDoctor: React.FC = () => {
     vacuumHabits: 'regular_sweep_mop'
   });
 
-  const [assessment, setAssessment] = useState<IndoorAssessmentResult | null>(null);
+  // Recomputed live so every answer visibly moves the charts below.
+  const assessment = useMemo(
+    () => assessIndoorAir(answers, airQuality?.aqi),
+    [answers, airQuality?.aqi]
+  );
 
-  const calculateAssessment = () => {
-    let score = 20; // baseline
-    const hazards: IndoorAssessmentResult['primaryHazards'] = [];
-    const zeroCost: string[] = [];
-    const mediumTerm: string[] = [];
-    const equipment: string[] = [];
+  const breakdown = assessment.breakdown ?? [];
+  const chartData = breakdown.map((item, i) => ({
+    name: item.label,
+    value: item.points,
+    color: HAZARD_COLORS[i % HAZARD_COLORS.length]
+  }));
 
-    // 1. Incense / Mosquito Coils
-    if (answers.incenseOrCoils === 'mosquito_coils') {
-      score += 35;
-      hazards.push({
-        title: 'Mosquito Coil Combustion (High Particulate Hazard)',
-        description: 'Burning a single mosquito coil inside an enclosed room emits particulate matter equivalent to smoking 75–100 cigarettes, releasing toxic heavy polycyclic aromatic hydrocarbons (PAHs).',
-        severity: 'high'
-      });
-      zeroCost.push('Immediately replace smouldering mosquito coils with mosquito nets, window mesh screens, or electric liquid vaporizers.');
-    } else if (answers.incenseOrCoils === 'daily_agarbatti') {
-      score += 20;
-      hazards.push({
-        title: 'Daily Incense Smoke (Agarbatti / Dhoop)',
-        description: 'Incense combustion produces dense sub-micron carbon particles, benzene, and formaldehyde that linger in indoor air for up to 6 hours.',
-        severity: 'medium'
-      });
-      zeroCost.push('Ventilate the prayer area directly or switch to electric LED diyas and smokeless alternatives.');
-    }
+  const scoreColor =
+    assessment.score > 70 ? '#DC2626' : assessment.score > 50 ? '#F97316' : assessment.score > 30 ? '#F59E0B' : '#10B981';
 
-    // 2. Kitchen Exhaust & Fuel
-    if (answers.kitchenExhaust === 'poor_ventilation' || answers.kitchenExhaust === 'open_window') {
-      score += 25;
-      hazards.push({
-        title: 'Inadequate Cooking Fume Exhaust',
-        description: 'High-heat frying, tadka, and fuel combustion without an active mechanical exhaust fan trap ultrafine oil droplets, CO, and NO₂ inside the living quarters.',
-        severity: 'high'
-      });
-      zeroCost.push('Turn on the kitchen exhaust fan 2 minutes BEFORE lighting the stove and keep it running for 5 minutes after cooking completes.');
-      mediumTerm.push('Install a ducted kitchen chimney with a minimum airflow rating of 1000–1200 m³/hr.');
-    }
-
-    if (answers.cookingFuel === 'biomass' || answers.cookingFuel === 'kerosene') {
-      score += 40;
-      hazards.push({
-        title: 'Solid Fuel / Biomass Combustion',
-        description: 'Unvented biomass or kerosene produces extreme carbon monoxide and black carbon concentrations indoors.',
-        severity: 'high'
-      });
-      mediumTerm.push('Switch cooking entirely to clean electric induction or piped LPG/PNG.');
-    }
-
-    // 3. Indoor Smoking
-    if (answers.indoorSmoking === 'regular') {
-      score += 40;
-      hazards.push({
-        title: 'Secondhand Tobacco Smoke',
-        description: 'Tobacco smoke creates persistent thirdhand toxic residue on upholstery, curtains, and flooring, emitting volatile organic compounds for weeks.',
-        severity: 'high'
-      });
-      zeroCost.push('Designate the entire home as a 100% smoke-free zone. Smoking on balconies still drifts back through doorways.');
-    }
-
-    // 4. Dampness & Mould
-    if (answers.dampnessOrMould === 'visible_spots' || answers.dampnessOrMould === 'extensive') {
-      score += 25;
-      hazards.push({
-        title: 'Fungal Spores & Mould Bio-Aerosols',
-        description: 'Visible mould patches release millions of airborne mycotoxins and allergens, exacerbating chronic asthma, sinusitis, and persistent nighttime coughing.',
-        severity: 'high'
-      });
-      mediumTerm.push('Scrub mould-affected walls using dilute hydrogen peroxide or antifungal wash, and repair structural water seepage.');
-    }
-
-    // 5. Cleaning & Dust Re-suspension
-    if (answers.vacuumHabits === 'dry_sweep_only') {
-      score += 15;
-      hazards.push({
-        title: 'Dry Broom Dust Re-suspension',
-        description: 'Traditional dry broom sweeping kicks settled coarse and fine PM10 back into human breathing zones for 2 to 3 hours.',
-        severity: 'medium'
-      });
-      zeroCost.push('Switch to two-bucket wet mopping with a damp microfiber cloth instead of dry sweeping.');
-    }
-
-    // 6. Air Purifier
-    if (!answers.hasAirPurifier) {
-      score += 10;
-      equipment.push('Invest in an air purifier with a True HEPA H13 filter and Clean Air Delivery Rate (CADR) sized to your room volume (approx. 250–350 m³/hr for standard bedrooms).');
-    }
-
-    score = Math.min(100, Math.max(10, score));
-
-    let riskLevel: IndoorAssessmentResult['riskLevel'] = 'Low Hazard';
-    if (score > 70) riskLevel = 'Critical Hazard';
-    else if (score > 50) riskLevel = 'High Hazard';
-    else if (score > 30) riskLevel = 'Moderate Hazard';
-
-    setAssessment({
-      score,
-      riskLevel,
-      primaryHazards: hazards,
-      immediateZeroCostActions: zeroCost.length > 0 ? zeroCost : ['Maintain current good practices: keep kitchen ventilated and continue wet-mopping.'],
-      mediumTermImprovements: mediumTerm,
-      equipmentRecommendations: equipment,
-      scientificClarifications: [
-        'Houseplants Reality: Potted plants (Snake plant, Areca palm) cannot meaningfully filter real-world room air volume against particulate pollution. Mechanical HEPA filtration is required.',
-        'Strict Ozone Warning: Never purchase ozone generators or uncertified negative ionizers; ozone is an aggressive lung irritant banned in healthcare standards.'
-      ]
-    });
-  };
+  const riskBadgeClass =
+    assessment.riskLevel === 'Critical Hazard' ? 'bg-rose-100 text-rose-800 border-rose-300' :
+    assessment.riskLevel === 'High Hazard' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+    assessment.riskLevel === 'Moderate Hazard' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+    'bg-emerald-100 text-emerald-800 border-emerald-300';
 
   return (
-    <div className="space-y-6">
-      
-      {/* Feature Title */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2 text-forest-800 text-xs font-bold uppercase tracking-wider">
-          <Home className="w-4 h-4 text-emerald-600" />
-          <span>Indoor Air Doctor — Comprehensive Risk Assessment</span>
-        </div>
-        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight font-sans mt-1">
-          Evaluate & Protect Your Indoor Living Sanctuary
-        </h2>
-        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2.5 text-xs text-blue-900">
-          <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+    <div className="space-y-5">
+
+      {/* Header */}
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <strong>Transparency Notice:</strong> This is a lifestyle and environmental hazard assessment tool, <em>not</em> an indoor sensor. AirAware AI never fabricates indoor AQI numbers without a verified, connected hardware monitor.
+            <div className="flex items-center gap-2 text-forest-800 text-[11px] font-bold uppercase tracking-wider">
+              <Home className="w-4 h-4 text-emerald-600" />
+              <span>Indoor Air Hacks</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-1">
+              Find what pollutes your home — then fix it today
+            </h2>
+            <p className="text-xs text-slate-600 mt-1.5 max-w-2xl leading-relaxed">
+              Answer 6 quick questions. The charts update instantly, ranked by how much each source adds to your indoor risk.
+            </p>
           </div>
+          {onBackToPlan && (
+            <button
+              onClick={onBackToPlan}
+              className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-forest-800 hover:text-forest-950 shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Action plan</span>
+            </button>
+          )}
+        </div>
+        <div className="mt-3 p-2.5 bg-blue-50 border border-blue-200 rounded-xl flex items-start gap-2 text-[11px] text-blue-900">
+          <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+          <span>This is a hazard assessment, not an indoor sensor. AirAware AI never fabricates an indoor AQI number.</span>
         </div>
       </div>
 
-      {/* Assessment Questionnaire Form */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-        <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider text-slate-500 border-b border-slate-100 pb-2">
-          Household Habits & Living Environment Audit
+      {/* Visual summary */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <div className="lg:col-span-5 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indoor hazard score</span>
+            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-lg border ${riskBadgeClass}`}>
+              {assessment.riskLevel}
+            </span>
+          </div>
+
+          <div className="mt-3 flex items-end gap-2">
+            <span className="text-5xl font-extrabold leading-none" style={{ color: scoreColor }}>
+              {assessment.score}
+            </span>
+            <span className="text-xs font-semibold text-slate-400 mb-1">/ 100</span>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1">Lower is healthier.</p>
+
+          {/* Score bar with thresholds */}
+          <div className="mt-3">
+            <div className="h-3 w-full rounded-full bg-slate-100 overflow-hidden border border-slate-200 p-0.5">
+              <div
+                className="h-full rounded-full transition-all duration-500"
+                style={{ width: `${assessment.score}%`, backgroundColor: scoreColor }}
+              />
+            </div>
+            <div className="flex justify-between text-[9px] font-mono text-slate-400 mt-1">
+              <span>0 Clean</span>
+              <span>30</span>
+              <span>50</span>
+              <span>70</span>
+              <span>100 Severe</span>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-slate-50 rounded-xl border border-slate-100 text-[11px] text-slate-600 leading-relaxed">
+            <strong className="text-slate-800">Today's outdoor context:</strong>{' '}
+            {airQuality?.aqi !== undefined
+              ? `${airQuality.location} is at AQI ${airQuality.aqi} (${airQuality.aqiCategory}). Open-window habits are weighted against this.`
+              : 'Outdoor AQI unavailable — window habits are weighted on general guidance only.'}
+          </div>
+        </div>
+
+        <div className="lg:col-span-7 bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            What is adding to your indoor risk
+          </h3>
+          <p className="text-[11px] text-slate-500 mt-0.5 mb-3">Each slice is the share of your hazard points.</p>
+          <DonutChart
+            data={chartData}
+            centerValue={`${assessment.score}`}
+            centerLabel="hazard points"
+            unit=" pts"
+            size={148}
+          />
+        </div>
+      </div>
+
+      {/* Questionnaire */}
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+        <h3 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-2">
+          Your home in 6 questions
         </h3>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-          
-          {/* Question 1: Cooking Exhaust */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs mt-4">
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Kitchen Ventilation & Exhaust</label>
+            <label className="block font-semibold text-slate-800 mb-1">Kitchen exhaust</label>
             <select
               value={answers.kitchenExhaust}
               onChange={(e) => setAnswers({ ...answers, kitchenExhaust: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="chimney_hepa">Ducted Electric Chimney (High extraction)</option>
-              <option value="exhaust_fan">Wall Exhaust Fan</option>
-              <option value="open_window">Open Kitchen Window Only</option>
-              <option value="poor_ventilation">No active exhaust / poor airflow</option>
+              <option value="chimney_hepa">Ducted chimney (strong extraction)</option>
+              <option value="exhaust_fan">Wall exhaust fan</option>
+              <option value="open_window">Open window only</option>
+              <option value="poor_ventilation">No exhaust / poor airflow</option>
             </select>
           </div>
 
-          {/* Question 2: Incense or Coils */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Incense (Agarbatti) & Mosquito Coils</label>
+            <label className="block font-semibold text-slate-800 mb-1">Incense &amp; mosquito coils</label>
             <select
               value={answers.incenseOrCoils}
               onChange={(e) => setAnswers({ ...answers, incenseOrCoils: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="none">None used indoors</option>
-              <option value="festivals_only">Festivals / occasional only</option>
-              <option value="daily_agarbatti">Daily incense / dhoop sticks</option>
-              <option value="mosquito_coils">Mosquito coils burned at night</option>
+              <option value="none">None indoors</option>
+              <option value="festivals_only">Festivals only</option>
+              <option value="daily_agarbatti">Daily agarbatti / dhoop</option>
+              <option value="mosquito_coils">Mosquito coils at night</option>
             </select>
           </div>
 
-          {/* Question 3: Dampness / Mould */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Dampness & Wall Mould</label>
+            <label className="block font-semibold text-slate-800 mb-1">Dampness &amp; mould</label>
             <select
               value={answers.dampnessOrMould}
               onChange={(e) => setAnswers({ ...answers, dampnessOrMould: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="none">No dampness or smells</option>
-              <option value="musty_smell">Musty smell in monsoon/winter</option>
-              <option value="visible_spots">Visible black/grey mould patches</option>
-              <option value="extensive">Extensive water seepage</option>
+              <option value="none">None</option>
+              <option value="musty_smell">Musty smell in monsoon</option>
+              <option value="visible_spots">Visible mould patches</option>
+              <option value="extensive">Extensive seepage</option>
             </select>
           </div>
 
-          {/* Question 4: Cleaning Technique */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Daily Floor Cleaning Habit</label>
+            <label className="block font-semibold text-slate-800 mb-1">Floor cleaning</label>
             <select
               value={answers.vacuumHabits}
               onChange={(e) => setAnswers({ ...answers, vacuumHabits: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="regular_sweep_mop">Dry broom followed by wet mopping</option>
-              <option value="hepa_vacuum">HEPA vacuum cleaner</option>
-              <option value="dry_sweep_only">Dry broom sweeping only</option>
+              <option value="hepa_vacuum">HEPA vacuum</option>
+              <option value="regular_sweep_mop">Broom + wet mop</option>
+              <option value="dry_sweep_only">Dry broom only</option>
             </select>
           </div>
 
-          {/* Question 5: Indoor Smoking */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Indoor Tobacco Smoking</label>
+            <label className="block font-semibold text-slate-800 mb-1">Indoor smoking</label>
             <select
               value={answers.indoorSmoking}
               onChange={(e) => setAnswers({ ...answers, indoorSmoking: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="none">Completely smoke-free home</option>
-              <option value="occasional">Occasional on balcony / window</option>
+              <option value="none">Smoke-free home</option>
+              <option value="occasional">Occasional, on balcony</option>
               <option value="regular">Regular indoor smoking</option>
             </select>
           </div>
 
-          {/* Question 6: Window Habits */}
           <div>
-            <label className="block font-semibold text-slate-800 mb-1.5">Window Ventilation Routine</label>
+            <label className="block font-semibold text-slate-800 mb-1">Window routine</label>
             <select
               value={answers.windowHabits}
               onChange={(e) => setAnswers({ ...answers, windowHabits: e.target.value as any })}
               className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-forest-500 bg-white"
             >
-              <option value="ventilate_when_clean">Timed ventilation during clean afternoon hours</option>
-              <option value="always_open">Windows kept open all day and night</option>
-              <option value="rarely_open">Kept closed most of the day</option>
-              <option value="sealed_ac">Sealed air-conditioned rooms</option>
+              <option value="ventilate_when_clean">Timed, during clean hours</option>
+              <option value="always_open">Open all day and night</option>
+              <option value="rarely_open">Closed most of the day</option>
+              <option value="sealed_ac">Sealed, air-conditioned</option>
             </select>
           </div>
         </div>
 
-        <div className="pt-2 flex justify-end">
-          <button
-            onClick={calculateAssessment}
-            className="flex items-center gap-2 px-6 py-2.5 bg-forest-900 hover:bg-forest-800 text-white font-bold text-xs rounded-xl shadow-md transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span>Generate Indoor Risk Audit</span>
-          </button>
+        <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-slate-600">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={answers.hasAirPurifier}
+              onChange={(e) => setAnswers({ ...answers, hasAirPurifier: e.target.checked })}
+              className="w-4 h-4 rounded text-forest-600 focus:ring-forest-500"
+            />
+            <span>I have a HEPA air purifier</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={answers.pets}
+              onChange={(e) => setAnswers({ ...answers, pets: e.target.checked })}
+              className="w-4 h-4 rounded text-forest-600 focus:ring-forest-500"
+            />
+            <span>Pets at home</span>
+          </label>
+          <span className="ml-auto flex items-center gap-1 text-emerald-700 font-semibold">
+            <Wind className="w-3.5 h-3.5" /> Results update live
+          </span>
         </div>
       </div>
 
-      {/* Assessment Results Section */}
-      {assessment && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
-          
-          {/* Header Score Card */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 bg-slate-50 rounded-2xl border border-slate-200 gap-4">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indoor Exposure Hazard Index</span>
-              <div className="text-3xl font-extrabold text-slate-900 mt-1 font-sans">
-                {assessment.score} <span className="text-xs font-semibold text-slate-400">/ 100</span>
-              </div>
-              <p className="text-xs text-slate-600 mt-1">
-                Lower is healthier. Evaluates combustion sources, particulate re-suspension, and ventilation adequacy.
-              </p>
-            </div>
-
-            <div className="shrink-0">
-              <span className={`px-4 py-2 rounded-xl text-xs font-bold shadow-xs ${
-                assessment.riskLevel === 'Critical Hazard' ? 'bg-rose-100 text-rose-800 border border-rose-300' :
-                assessment.riskLevel === 'High Hazard' ? 'bg-orange-100 text-orange-800 border border-orange-300' :
-                assessment.riskLevel === 'Moderate Hazard' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
-                'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              }`}>
-                {assessment.riskLevel}
+      {/* Hacks */}
+      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+        <h4 className="text-xs font-bold text-forest-900 uppercase tracking-wider flex items-center gap-1.5 mb-1">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <span>Free hacks — do these today</span>
+        </h4>
+        <p className="text-[11px] text-slate-500 mb-3">No purchase needed.</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+          {assessment.immediateZeroCostActions.map((action, idx) => (
+            <div key={idx} className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-[11px] text-slate-800 flex items-start gap-2">
+              <span className="w-5 h-5 shrink-0 rounded-full bg-emerald-600 text-white text-[10px] font-bold flex items-center justify-center">
+                {idx + 1}
               </span>
+              <span className="leading-relaxed">{action}</span>
             </div>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Identified Hazards */}
-          {assessment.primaryHazards.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">
-                Identified Indoor Hazard Sources
-              </h4>
-              <div className="space-y-3">
-                {assessment.primaryHazards.map((h, i) => (
-                  <div key={i} className="p-3.5 bg-rose-50/70 border border-rose-200 rounded-xl text-xs">
-                    <div className="font-bold text-rose-950 flex items-center gap-2">
-                      <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                      <span>{h.title}</span>
-                    </div>
-                    <p className="text-rose-900/80 mt-1 leading-relaxed">{h.description}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Zero-Cost Immediate Fixes */}
-          <div>
-            <h4 className="text-xs font-bold text-forest-900 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>Immediate Zero-Cost Actions (Do Today)</span>
-            </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {assessment.immediateZeroCostActions.map((action, idx) => (
-                <div key={idx} className="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs text-slate-800 flex items-start gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 mt-1.5 shrink-0" />
-                  <span>{action}</span>
+      {/* Hazards found */}
+      {assessment.primaryHazards.length > 0 && (
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+          <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3">Sources detected</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+            {assessment.primaryHazards.map((h, i) => (
+              <div key={i} className="p-3 bg-rose-50/70 border border-rose-200 rounded-xl text-[11px]">
+                <div className="font-bold text-rose-950 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                  <span>{h.title}</span>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Scientific Clarifications & Busting Myths */}
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-600 space-y-2">
-            <div className="font-bold text-slate-800 flex items-center gap-2">
-              <Stethoscope className="w-4 h-4 text-emerald-700" />
-              <span>Evidence-Conscious Scientific Clarifications</span>
-            </div>
-            {assessment.scientificClarifications.map((item, idx) => (
-              <p key={idx} className="leading-relaxed">• {item}</p>
+                <p className="text-rose-900/80 mt-1 leading-relaxed">{h.description}</p>
+              </div>
             ))}
           </div>
-
         </div>
       )}
+
+      {/* Medium term + equipment */}
+      {(assessment.mediumTermImprovements.length > 0 || assessment.equipmentRecommendations.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {assessment.mediumTermImprovements.length > 0 && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Worth fixing this month</h4>
+              <ul className="space-y-1.5 text-[11px] text-slate-700">
+                {assessment.mediumTermImprovements.map((item, i) => (
+                  <li key={i} className="flex gap-2"><span className="text-slate-400">•</span><span>{item}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {assessment.equipmentRecommendations.length > 0 && (
+            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+              <h4 className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">If you buy one thing</h4>
+              <ul className="space-y-1.5 text-[11px] text-slate-700">
+                {assessment.equipmentRecommendations.map((item, i) => (
+                  <li key={i} className="flex gap-2"><span className="text-slate-400">•</span><span>{item}</span></li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Myth busting */}
+      <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] text-slate-600 space-y-1.5">
+        <div className="font-bold text-slate-800 flex items-center gap-2 text-xs">
+          <Stethoscope className="w-4 h-4 text-emerald-700" />
+          <span>Two myths worth knowing</span>
+        </div>
+        {assessment.scientificClarifications.map((item, idx) => (
+          <p key={idx} className="leading-relaxed">• {item}</p>
+        ))}
+      </div>
 
     </div>
   );

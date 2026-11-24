@@ -3,6 +3,7 @@ import { AirQualityContext, HourlyForecastPoint } from '../../types/air-quality.
 import { PollutantCard } from '../dashboard/PollutantCard.tsx';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { MapPin, Calendar, Database, ShieldAlert, Globe, Info } from 'lucide-react';
+import { getAQIColor } from '../../intelligence/aqi/cpcb-calculator.ts';
 
 interface Props {
   airQuality: AirQualityContext;
@@ -21,6 +22,18 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
     gridResolutionKm, 
     scientificDisclaimer 
   } = airQuality;
+
+  const maxSubIndex = Math.max(0, ...pollutants.map(p => p.subIndex ?? 0));
+  const aqiDrivers = pollutants
+    .filter(p => p.available && p.subIndex !== undefined)
+    .map(p => ({
+      code: p.chemicalFormula,
+      subIndex: p.subIndex as number,
+      category: p.category ?? '',
+      color: getAQIColor(p.category ?? 'Satisfactory'),
+      isMax: (p.subIndex as number) === maxSubIndex
+    }))
+    .sort((a, b) => b.subIndex - a.subIndex);
 
   const chartData = hourlyTrends.map(item => {
     let hourLabel = item.time;
@@ -69,7 +82,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
             {dataType === 'modelled_estimate' ? (
               <>
                 <Globe className="w-3.5 h-3.5 text-blue-600" />
-                <span>Grid: {gridCoordinates ? `${gridCoordinates.latitude}°N, ${gridCoordinates.longitude}°E` : 'Regional (~11 km)'}</span>
+                <span>Grid: {gridCoordinates ? `${gridCoordinates.latitude}°N, ${gridCoordinates.longitude}°E` : 'Regional model grid'}</span>
               </>
             ) : (
               <>
@@ -80,6 +93,42 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
           </div>
         </div>
       </div>
+
+      {/* What drives the AQI — one glance */}
+      {aqiDrivers.length > 0 && (
+        <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">What is driving today's AQI</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                Each bar is one pollutant's CPCB sub-index. Your AQI equals the <strong>highest</strong> bar.
+              </p>
+            </div>
+            <div className="text-right shrink-0">
+              <span className="text-[9px] uppercase tracking-wider text-slate-400 block">AQI</span>
+              <span className="text-2xl font-extrabold text-slate-900">{airQuality.aqi ?? '—'}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {aqiDrivers.map((d) => (
+              <div key={d.code} className="flex items-center gap-2">
+                <span className="w-14 shrink-0 text-[11px] font-bold text-slate-700">{d.code}</span>
+                <div className="flex-1 h-4 bg-slate-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{ width: `${Math.min(100, (d.subIndex / 500) * 100)}%`, backgroundColor: d.color }}
+                  />
+                </div>
+                <span className="w-10 shrink-0 text-right text-[11px] font-mono font-bold text-slate-800">{d.subIndex}</span>
+                <span className={`w-16 shrink-0 text-[9px] font-bold uppercase ${d.isMax ? 'text-rose-700' : 'text-slate-400'}`}>
+                  {d.isMax ? 'drives AQI' : d.category}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 6 Pollutant Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
