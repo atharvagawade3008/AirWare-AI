@@ -51,26 +51,26 @@ export const QuickActions: React.FC<Props> = ({ onNavigate, onOpenAI }) => {
           <button
             key={c.title}
             onClick={c.action}
-            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:border-forest-500 hover:shadow-md transition-all text-left flex flex-col justify-between"
+            className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:border-forest-500 dark:hover:border-emerald-600 hover:shadow-md transition-all text-left flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between">
                 <span className={`w-8 h-8 rounded-lg flex items-center justify-center border ${c.accent}`}>
                   <Icon className="w-4 h-4" />
                 </span>
-                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide group-hover:text-forest-700 transition-colors">
+                <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide group-hover:text-forest-700 dark:group-hover:text-emerald-400 transition-colors">
                   {c.badge}
                 </span>
               </div>
-              <h4 className="font-bold text-slate-900 text-sm mt-3 group-hover:text-forest-900 transition-colors">
+              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-sm mt-3 group-hover:text-forest-900 dark:group-hover:text-emerald-300 transition-colors">
                 {c.title}
               </h4>
-              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
                 {c.subtitle}
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold text-forest-700">
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-forest-700 dark:text-emerald-400">
               <span>Open Feature</span>
               <ArrowUpRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
             </div>

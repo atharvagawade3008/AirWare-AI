@@ -49,19 +49,20 @@ export const DonutChart: React.FC<Props> = ({ data, centerValue, centerLabel, si
             <Tooltip
               formatter={(value: any, name: any) => [`${value}${unit}`, name]}
               contentStyle={{
-                backgroundColor: '#1E293B',
+                backgroundColor: 'var(--chart-tooltip-bg)',
                 borderRadius: '0.75rem',
-                border: 'none',
-                color: '#fff',
-                fontSize: '12px'
+                border: '1px solid var(--chart-tooltip-border)',
+                color: 'var(--chart-tooltip-text)',
+                fontSize: '12px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)'
               }}
-              itemStyle={{ color: '#fff' }}
+              itemStyle={{ color: 'var(--chart-tooltip-text)' }}
             />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-4">
-          <span className={`text-xl font-extrabold leading-none ${dark ? 'text-white' : 'text-slate-900'}`}>{centerValue}</span>
-          <span className={`text-[10px] text-center mt-1 leading-tight ${dark ? 'text-emerald-100/80' : 'text-slate-500'}`}>{centerLabel}</span>
+          <span className={`text-xl font-extrabold leading-none ${dark ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>{centerValue}</span>
+          <span className={`text-[10px] text-center mt-1 leading-tight ${dark ? 'text-emerald-100/80' : 'text-slate-500 dark:text-slate-400'}`}>{centerLabel}</span>
         </div>
       </div>
 
@@ -70,9 +71,9 @@ export const DonutChart: React.FC<Props> = ({ data, centerValue, centerLabel, si
           <li key={slice.name} className="flex items-center justify-between gap-2 text-[11px]">
             <span className="flex items-center gap-1.5 min-w-0">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: slice.color }} />
-              <span className={`truncate ${dark ? 'text-emerald-50/90' : 'text-slate-700'}`}>{slice.name}</span>
+              <span className={`truncate ${dark ? 'text-emerald-50/90' : 'text-slate-700 dark:text-slate-300'}`}>{slice.name}</span>
             </span>
-            <span className={`font-bold shrink-0 ${dark ? 'text-white' : 'text-slate-900'}`}>
+            <span className={`font-bold shrink-0 ${dark ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
               {total > 0 ? Math.round((slice.value / total) * 100) : 0}%
             </span>
           </li>

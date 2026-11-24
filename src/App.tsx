@@ -23,6 +23,7 @@ import { DemoScenario } from './types/demo.ts';
 import { CityLocation } from './services/api/geocoding.ts';
 import { fetchLiveEnvironmentalData } from './services/api/open-meteo.ts';
 import { getStoredProfile, saveStoredProfile, getStoredCity, saveStoredCity } from './services/storage/profile-store.ts';
+import { ThemeMode, getStoredTheme, applyTheme, saveTheme } from './services/storage/theme-store.ts';
 import { generatePersonalizedRecommendations } from './intelligence/recommendations/recommendation-engine.ts';
 import { AlertTriangle, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
 
@@ -32,6 +33,9 @@ export default function App() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+
+  // Light / dark appearance
+  const [theme, setTheme] = useState<ThemeMode>(getStoredTheme);
 
   // Household Profile State
   const [profile, setProfile] = useState<HouseholdProfile>(getStoredProfile);
@@ -65,6 +69,12 @@ export default function App() {
       setIsLoadingData(false);
     }
   }, []);
+
+  // Apply and persist the chosen appearance
+  useEffect(() => {
+    applyTheme(theme);
+    saveTheme(theme);
+  }, [theme]);
 
   // Initial load
   useEffect(() => {
@@ -135,7 +145,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-forest-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-forest-500 selection:text-white theme-transitionable">
       
       {/* Global Header */}
       <Header
@@ -149,6 +159,8 @@ export default function App() {
         onOpenScenarioModal={() => setIsScenarioModalOpen(true)}
         activeScenarioName={activeScenario ? activeScenario.name : undefined}
         isLoadingData={isLoadingData}
+        theme={theme}
+        onToggleTheme={() => setTheme((current) => (current === 'dark' ? 'light' : 'dark'))}
       />
 
       {/* Demo Scenario Notification Banner */}
@@ -177,12 +189,12 @@ export default function App() {
         
         {/* Error Notification Banner if API failed */}
         {dataError && (
-          <div className="mb-6 p-4 bg-rose-50 border border-rose-200 rounded-2xl flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs text-rose-900 shadow-xs">
+          <div className="mb-6 p-4 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-2xl flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs text-rose-900 dark:text-rose-200 shadow-xs">
             <div className="flex items-start gap-2.5">
               <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div>
                 <strong className="font-bold">Telemetry Alert:</strong> {dataError}
-                <div className="mt-1 text-slate-600">
+                <div className="mt-1 text-slate-600 dark:text-slate-400">
                   AirAware AI does not invent fake replacement numbers. The application remains fully functional using last known verified readings and general evidence-conscious guidelines.
                 </div>
               </div>
@@ -190,7 +202,7 @@ export default function App() {
             {!activeScenario && (
               <button
                 onClick={() => loadLiveData(selectedCity.lat, selectedCity.lon, selectedCity.name, selectedCity.state)}
-                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-900 rounded-xl font-bold shrink-0 transition-colors"
+                className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 bg-rose-100 hover:bg-rose-200 dark:bg-rose-900/60 dark:hover:bg-rose-900 text-rose-900 dark:text-rose-100 rounded-xl font-bold shrink-0 transition-colors"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Retry</span>
@@ -235,7 +247,7 @@ export default function App() {
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Live Pollutant Highlights</h3>
                 <button
                   onClick={() => setActiveTab('air-quality')}
-                  className="text-xs font-semibold text-forest-700 hover:text-forest-900 transition-colors"
+                  className="text-xs font-semibold text-forest-700 hover:text-forest-900 dark:text-emerald-400 dark:hover:text-emerald-300 transition-colors"
                 >
                   View full telemetry &amp; trends &rarr;
                 </button>
@@ -283,16 +295,16 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-12 pt-8 pb-28 sm:pb-8 text-xs text-slate-500">
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 mt-12 pt-8 pb-28 sm:pb-8 text-xs text-slate-500 dark:text-slate-400">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">AirAware AI</span>
+            <span className="font-bold text-slate-800 dark:text-slate-200">AirAware AI</span>
             <span>• Breathe Smarter. Live Healthier.</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
             <span>Data: CPCB NAQI Standard &amp; Open-Meteo</span>
             <span>Zero Recurring Cost Architecture</span>
-            <span className="font-mono text-forest-800">India-First Engine</span>
+            <span className="font-mono text-forest-800 dark:text-emerald-300">India-First Engine</span>
           </div>
         </div>
       </footer>

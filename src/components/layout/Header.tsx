@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, MapPin, Navigation, Bot, Users, Sparkles, AlertCircle, ChevronDown } from 'lucide-react';
 import { CityLocation, searchCities, POPULAR_INDIAN_CITIES } from '../../services/api/geocoding.ts';
 import { FreshnessBadge } from './FreshnessBadge.tsx';
+import { ThemeToggle } from './ThemeToggle.tsx';
+import { ThemeMode } from '../../services/storage/theme-store.ts';
 import { DataFreshness } from '../../types/air-quality.ts';
 import { HouseholdProfile } from '../../types/profile.ts';
 
@@ -16,6 +18,8 @@ interface HeaderProps {
   onOpenScenarioModal: () => void;
   activeScenarioName?: string;
   isLoadingData: boolean;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -28,7 +32,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAI,
   onOpenScenarioModal,
   activeScenarioName,
-  isLoadingData
+  isLoadingData,
+  theme,
+  onToggleTheme
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<CityLocation[]>(POPULAR_INDIAN_CITIES);
@@ -83,7 +89,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 py-2 sm:h-16 sm:flex-nowrap sm:gap-x-3 sm:py-0">
           
@@ -99,18 +105,19 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-bold text-base sm:text-lg text-forest-950 tracking-tight font-sans whitespace-nowrap">AirAware <span className="text-emerald-600">AI</span></span>
-                <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-forest-100 text-forest-800 rounded">India-First</span>
+                <span className="font-bold text-base sm:text-lg text-forest-950 dark:text-slate-100 tracking-tight font-sans whitespace-nowrap">AirAware <span className="text-emerald-600 dark:text-emerald-400">AI</span></span>
+                <span className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-semibold bg-forest-100 text-forest-800 dark:bg-forest-900/60 dark:text-emerald-300 rounded">India-First</span>
               </div>
-              <p className="text-[11px] text-slate-500 hidden sm:block">Breathe smarter. Live healthier.</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:block">Breathe smarter. Live healthier.</p>
             </div>
           </div>
 
-          {/* Location Selector */}
-          <div className="relative order-3 w-full sm:order-2 sm:w-auto sm:flex-1 sm:max-w-xs md:max-w-sm" ref={dropdownRef}>
+          {/* Location Selector (+ theme toggle on phones) */}
+          <div className="order-3 flex w-full items-center gap-2 sm:order-2 sm:w-auto sm:flex-1 sm:max-w-xs md:max-w-sm">
+          <div className="relative min-w-0 flex-1" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 rounded-lg text-sm text-slate-800 border border-slate-200 transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 transition-colors"
             >
               <div className="flex items-center gap-2 truncate">
                 <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -122,31 +129,31 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Dropdown Search */}
             {isDropdownOpen && (
-              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden z-50">
-                <div className="p-2 border-b border-slate-100 flex items-center gap-2 bg-slate-50">
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden z-50">
+                <div className="p-2 border-b border-slate-100 dark:border-slate-700 flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60">
                   <Search className="w-4 h-4 text-slate-400 shrink-0" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search Indian city, district..."
-                    className="w-full bg-transparent text-xs text-slate-800 focus:outline-none"
+                    className="w-full bg-transparent text-xs text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
                     autoFocus
                   />
                 </div>
 
-                <div className="p-1 border-b border-slate-100">
+                <div className="p-1 border-b border-slate-100 dark:border-slate-700">
                   <button
                     onClick={handleUseCurrentLocation}
                     disabled={isLocating}
-                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors text-left"
+                    className="w-full flex items-center gap-2 px-2.5 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-colors text-left"
                   >
                     <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
                     <span>{isLocating ? 'Detecting GPS location...' : 'Use exact device location'}</span>
                   </button>
                 </div>
 
-                <div className="max-h-60 overflow-y-auto p-1 divide-y divide-slate-50">
+                <div className="max-h-60 overflow-y-auto p-1 divide-y divide-slate-50 dark:divide-slate-800">
                   <div className="px-2 py-1 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
                     {searchQuery ? 'Search Results' : 'Popular Indian Cities'}
                   </div>
@@ -157,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
                         onSelectCity(city);
                         setIsDropdownOpen(false);
                       }}
-                      className="w-full flex items-center justify-between px-2.5 py-2 text-xs text-slate-700 hover:bg-forest-50 hover:text-forest-900 rounded-lg transition-colors text-left"
+                      className="w-full flex items-center justify-between px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-forest-50 dark:hover:bg-forest-900/40 hover:text-forest-900 dark:hover:text-emerald-200 rounded-lg transition-colors text-left"
                     >
                       <span className="font-medium">{city.name}</span>
                       <span className="text-[11px] text-slate-400">{city.state || city.country}</span>
@@ -166,6 +173,7 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               </div>
             )}
+          </div>
           </div>
 
           {/* Right Action Controls */}
@@ -181,8 +189,8 @@ export const Header: React.FC<HeaderProps> = ({
               onClick={onOpenScenarioModal}
               className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                 activeScenarioName 
-                  ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold' 
-                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+                  ? 'bg-amber-50 text-amber-900 border-amber-300 font-semibold dark:bg-amber-950/50 dark:text-amber-200 dark:border-amber-800' 
+                  : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700 dark:hover:bg-slate-700'
               }`}
               title="Test with 6 preset evaluation scenarios"
               aria-label="Open demo scenarios"
@@ -195,13 +203,16 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Profile Button */}
             <button
               onClick={onOpenProfile}
-              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-forest-50 text-forest-800 border border-forest-200 hover:bg-forest-100 transition-colors"
+              className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-medium bg-forest-50 text-forest-800 border border-forest-200 hover:bg-forest-100 dark:bg-forest-900/40 dark:text-emerald-200 dark:border-forest-800 dark:hover:bg-forest-900/60 transition-colors"
               title="Configure household characteristics"
             >
               <Users className="w-3.5 h-3.5 text-forest-600" />
               <span className="hidden md:inline">My Family</span>
               {profile.hasChildren && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
             </button>
+
+            {/* Theme Toggle (Visible on all screens) */}
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
 
             {/* AI Assistant Drawer Trigger */}
             <button
