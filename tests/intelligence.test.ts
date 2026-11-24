@@ -209,6 +209,31 @@ const aiReply = runDeterministicAI({
 assert(aiReply.content.includes('avoid') || aiReply.content.includes('Unavailable'), 
   'AI Honesty: Assistant explicitly states telemetry is unavailable without inventing fake readings');
 
+// ==========================================
+// 7. WEBLLM LIFECYCLE, FALLBACK & STAGES
+// ==========================================
+console.log('\n--- Suite 7: WebLLM Model Lifecycle & Fallback ---');
+const { webLLMService, PRIMARY_WEBLLM_MODEL, FALLBACK_WEBLLM_MODEL } = await import('../src/services/ai/webllm-provider.ts');
+
+assert(PRIMARY_WEBLLM_MODEL === 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC', 'WebLLM: Primary model is Qwen2.5-0.5B (q4f16_1)');
+assert(FALLBACK_WEBLLM_MODEL === 'Qwen2.5-0.5B-Instruct-q4f32_1-MLC', 'WebLLM: Fallback model without shader-f16 is Qwen2.5-0.5B (q4f32_1)');
+
+const initialStatus = webLLMService.getStatus();
+assert(!initialStatus.isLoaded && !initialStatus.isLoading && initialStatus.loadError === null, 
+  'WebLLM: Initial service status is clean and non-blocking');
+
+let reportedStage = '';
+const loadResult = await webLLMService.loadModel((prog) => {
+  reportedStage = prog.stage;
+});
+
+assert(loadResult === false, 'WebLLM: Gracefully handles environments without WebGPU without crashing');
+assert(reportedStage === 'error', 'WebLLM: Dispatches error stage callback when hardware is unavailable');
+assert(webLLMService.getStatus().loadError !== null, 'WebLLM: Captures diagnostic error message');
+
+webLLMService.reset();
+assert(webLLMService.getStatus().loadError === null, 'WebLLM: Reset clears error state for safe retry without reload');
+
 console.log(`\n==========================================`);
 console.log(`TEST SUMMARY: ${passCount} Passed, ${failCount} Failed`);
 console.log(`==========================================\n`);
