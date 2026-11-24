@@ -8,14 +8,14 @@
 ### Sequence 1: Opening & Problem Statement (0:00 - 0:30)
 - **Visual:** Open `AirAware AI` in the browser at the Overview tab.
 - **Voiceover:** 
-  > "Welcome to AirAware AI. Most air quality apps are passive dashboards—they show a number like AQI 180, but fail to tell families what practical decisions they should make today. AirAware AI is an India-first environmental intelligence assistant that transforms live telemetry into personalized, low-emission daily routines."
+  > "Welcome to AirAware AI. Most air quality apps are passive dashboards—they show a number like AQI 180, but fail to tell families what practical decisions they should make today. AirAware AI is an India-first environmental intelligence assistant that transforms live telemetry and atmospheric models into personalized, low-emission daily routines."
 
 ---
 
-### Sequence 2: Real-Time Location & CPCB NAQI Telemetry (0:30 - 1:00)
-- **Visual:** Click location selector, switch between Mumbai, Delhi, and click "Use exact device location".
+### Sequence 2: Scientific Honesty & Data Source Transparency (0:30 - 1:00)
+- **Visual:** Point to the AQI card header: highlight the badge **"Modelled Atmospheric Estimate (CAMS / Open-Meteo)"** and the **"Indicative Derived Index"** label. Click location selector and switch between Mumbai and Delhi.
 - **Voiceover:**
-  > "Notice how AirAware AI uses verified real-time environmental telemetry from regional monitoring networks. We implement the exact official Central Pollution Control Board (CPCB) NAQI piecewise interpolation formula across PM2.5, PM10, NO2, and other criteria pollutants. We clearly indicate telemetry freshness, station distance, and atmospheric ventilation index."
+  > "Notice how AirAware AI maintains strict scientific integrity. Rather than pretending regional atmospheric models are rooftop sensors, we transparently classify Open-Meteo data as a Modelled Atmospheric Estimate from the Copernicus CAMS service. We show the 11-kilometer grid cell resolution and explain that derived indices apply official CPCB NAQI breakpoints for indicative comparison."
 
 ---
 
@@ -36,7 +36,7 @@
 ### Sequence 5: Hybrid GenAI Assistant in Action (2:00 - 2:30)
 - **Visual:** Click "Ask AI" in the header to open the drawer. Click the prompt chip: *"Is it safe for my children to play outside today?"*. Switch between Deterministic and WebLLM / Gemini modes.
 - **Voiceover:**
-  > "AirAware AI features a hybrid AI architecture. It can run open-weight language models directly in your browser using WebGPU through WebLLM for zero-cost, private inference, fallback to serverless Gemini, or use our deterministic CPCB engine. Notice how the AI never fabricates readings—it communicates strictly grounded environmental intelligence."
+  > "AirAware AI features a hybrid AI architecture. It can run open-weight language models directly in your browser using WebGPU through WebLLM for zero-cost, private inference, fallback to serverless Gemini, or use our deterministic CPCB engine. The AI explicitly knows whether data is modelled or observed, ensuring zero hallucinations."
 
 ---
 

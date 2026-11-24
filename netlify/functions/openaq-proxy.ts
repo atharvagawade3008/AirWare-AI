@@ -1,10 +1,27 @@
 // Netlify Serverless Function: Protected OpenAQ v3 Proxy
 // Keeps OPENAQ_API_KEY secure on the server side
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-API-Key',
+  'Content-Type': 'application/json'
+};
+
 export async function handler(event: any) {
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
@@ -13,9 +30,10 @@ export async function handler(event: any) {
   if (!apiKey) {
     return {
       statusCode: 503,
+      headers: CORS_HEADERS,
       body: JSON.stringify({
         error: 'OpenAQ API key not configured',
-        details: 'Using verified Open-Meteo regional air telemetry as primary source.'
+        details: 'Using verified CAMS atmospheric model estimates via Open-Meteo as primary source.'
       })
     };
   }
@@ -26,6 +44,7 @@ export async function handler(event: any) {
   if (!lat || !lon) {
     return {
       statusCode: 400,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'lat and lon parameters are required' })
     };
   }
@@ -42,6 +61,7 @@ export async function handler(event: any) {
     if (!res.ok) {
       return {
         statusCode: res.status,
+        headers: CORS_HEADERS,
         body: JSON.stringify({ error: `OpenAQ returned ${res.status}` })
       };
     }
@@ -49,12 +69,13 @@ export async function handler(event: any) {
     const data = await res.json();
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: CORS_HEADERS,
       body: JSON.stringify(data)
     };
   } catch (err: any) {
     return {
       statusCode: 500,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'OpenAQ proxy failure', message: err.message })
     };
   }

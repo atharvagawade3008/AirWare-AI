@@ -107,14 +107,18 @@ export default function App() {
   };
 
   // Generate Personalized Recommendations via deterministic engine
-  const effectiveAQI = airQuality || {
+  const effectiveAQI: AirQualityContext = airQuality || {
     location: selectedCity.name,
+    state: selectedCity.state,
     country: 'India',
     latitude: selectedCity.lat,
     longitude: selectedCity.lon,
-    provider: 'Open-Meteo Telemetry',
+    provider: 'CAMS Atmospheric Model (Open-Meteo)',
+    dataType: 'modelled_estimate',
+    indexClassification: 'insufficient_data',
     freshness: 'delayed',
-    pollutants: []
+    pollutants: [],
+    scientificDisclaimer: 'Initial environmental telemetry loading...'
   };
 
   const { guidanceSummary, exposurePlanner } = generatePersonalizedRecommendations(

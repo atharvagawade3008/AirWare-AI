@@ -1,4 +1,4 @@
-import { AQICategory, PollutantReading, PollutantType } from '../../types/air-quality.ts';
+import { AQICategory, PollutantReading, PollutantType, IndexClassification } from '../../types/air-quality.ts';
 
 interface Breakpoint {
   cLo: number;
@@ -7,8 +7,8 @@ interface Breakpoint {
   iHi: number;
 }
 
-// Official CPCB Breakpoints (CPCB 2014 NAQI guidelines)
-const CPCB_BREAKPOINTS: Record<PollutantType, Breakpoint[]> = {
+// Official CPCB Breakpoints (CPCB 2014 NAQI guidelines - Table 1 & Table 2)
+export const CPCB_BREAKPOINTS: Record<PollutantType, Breakpoint[]> = {
   pm10: [
     { cLo: 0, cHi: 50, iLo: 0, iHi: 50 },
     { cLo: 51, cHi: 100, iLo: 51, iHi: 100 },
@@ -42,7 +42,7 @@ const CPCB_BREAKPOINTS: Record<PollutantType, Breakpoint[]> = {
     { cLo: 749, cHi: 1000, iLo: 401, iHi: 500 },
   ],
   co: [
-    // Note: CO in mg/m³
+    // Note: CO standard breakpoints in mg/m³
     { cLo: 0, cHi: 1.0, iLo: 0, iHi: 50 },
     { cLo: 1.1, cHi: 2.0, iLo: 51, iHi: 100 },
     { cLo: 2.1, cHi: 10.0, iLo: 101, iHi: 200 },
@@ -61,6 +61,7 @@ const CPCB_BREAKPOINTS: Record<PollutantType, Breakpoint[]> = {
 };
 
 export function getAQICategory(aqi: number): AQICategory {
+  if (aqi < 0 || isNaN(aqi)) return 'Unknown';
   if (aqi <= 50) return 'Good';
   if (aqi <= 100) return 'Satisfactory';
   if (aqi <= 200) return 'Moderately Polluted';
@@ -120,16 +121,26 @@ export interface CPCBCalculationResult {
   prominentPollutant?: string;
   subIndices: Record<string, number>;
   isValid: boolean;
+  indexClassification: IndexClassification;
   validationReason?: string;
 }
 
 /**
- * CPCB Rule:
+ * CPCB Rule Implementation & Pathway Separation:
  * 1. Must monitor at least 3 pollutants.
  * 2. At least ONE of them must be either PM10 or PM2.5.
  * 3. AQI is the maximum of the calculated sub-indices.
+ * 
+ * Data Pathway Distinction:
+ * - If isModelData === true: Output is labeled as 'indicative_model_index'
+ *   (Applying CPCB breakpoint math to atmospheric model forecasts, NOT official station AQI).
+ * - If isModelData === false: Output is labeled as 'official_cpcb_naqi'
+ *   (Valid only when input is physical station monitoring data).
  */
-export function calculateNAQI(readings: PollutantReading[]): CPCBCalculationResult {
+export function calculateNAQI(
+  readings: PollutantReading[],
+  isModelData: boolean = true
+): CPCBCalculationResult {
   const subIndices: Record<string, number> = {};
   let pmCount = 0;
   let validCount = 0;
@@ -137,7 +148,7 @@ export function calculateNAQI(readings: PollutantReading[]): CPCBCalculationResu
   let prominent = '';
 
   for (const r of readings) {
-    if (!r.available || r.value === undefined || r.value === null) continue;
+    if (!r.available || r.value === undefined || r.value === null || isNaN(r.value)) continue;
 
     // Normalise CO if provided in µg/m³ to mg/m³
     let val = r.value;
@@ -166,19 +177,17 @@ export function calculateNAQI(readings: PollutantReading[]): CPCBCalculationResu
     return {
       subIndices,
       isValid: false,
-      validationReason: 'CPCB methodology mandates at least PM2.5 or PM10 measurement to calculate official AQI.'
+      indexClassification: 'insufficient_data',
+      validationReason: 'CPCB methodology mandates monitoring of at least PM2.5 or PM10. Insufficient validated data to calculate CPCB AQI.'
     };
   }
 
   if (validCount < 3) {
-    // If we only have PM2.5 or PM10 and 1 other, CPCB guidelines prefer stating individual sub-indices rather than full NAQI
     return {
-      aqi: maxSubIndex > 0 ? maxSubIndex : undefined,
-      category: maxSubIndex > 0 ? getAQICategory(maxSubIndex) : undefined,
-      prominentPollutant: prominent,
       subIndices,
-      isValid: true,
-      validationReason: 'Calculated with fewer than 3 pollutants (minimum CPCB guideline is 3). Representing peak particulate sub-index.'
+      isValid: false,
+      indexClassification: 'insufficient_data',
+      validationReason: `CPCB methodology mandates at least 3 monitored criteria pollutants (found ${validCount}). Insufficient validated data to calculate official CPCB AQI.`
     };
   }
 
@@ -187,6 +196,7 @@ export function calculateNAQI(readings: PollutantReading[]): CPCBCalculationResu
     category: getAQICategory(maxSubIndex),
     prominentPollutant: prominent,
     subIndices,
-    isValid: true
+    isValid: true,
+    indexClassification: isModelData ? 'indicative_model_index' : 'official_cpcb_naqi'
   };
 }

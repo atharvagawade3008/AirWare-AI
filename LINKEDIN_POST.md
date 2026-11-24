@@ -21,11 +21,14 @@ That is why we built **AirAware AI** — an India-first, GenAI-powered environme
 
 ### 💡 What Makes AirAware AI Different?
 
-1. **Deterministic CPCB Mathematical Integrity:**
-   We strictly calculate the National Air Quality Index (NAQI) using the official Central Pollution Control Board (CPCB 2014) piecewise linear interpolation formula across 6 monitored pollutants (PM2.5, PM10, NO₂, SO₂, CO, O₃). We enforce official validity criteria (at least 3 pollutants monitored, with PM2.5 or PM10 mandatory) and identify the *Prominent Pollutant*. We never invent fake numbers or display unverified readings.
+1. **Scientific Honesty & Data Pathway Separation:**
+   Most air quality platforms misrepresent atmospheric model forecasts as local ground sensors. AirAware AI separates data pathways:
+   - **Ground Monitoring Stations (CAAQMS):** Physical sensor readings delivering official CPCB NAQI when validity rules (≥3 pollutants, PM mandatory) are met.
+   - **Atmospheric Model Estimates (CAMS via Open-Meteo):** Regional 11 km numerical forecasts clearly labeled as *Indicative Derived Indices*, with honest micro-climate disclaimers.
+   - **Data Absence Transparency:** In remote areas with no station in range, AirAware AI displays *"Insufficient Validated Data to Calculate CPCB AQI"*. We never fabricate fake numbers.
 
 2. **24-Hour Time-Based Exposure Planner:**
-   Pollution is not static. Solar radiation lifts the atmospheric boundary layer between 1 PM and 4 PM, whereas nocturnal cooling and morning rush-hour traffic trap tailpipe soot near the pavement. AirAware AI segments the day into dynamic exposure windows with tailored Do’s and Don’ts.
+   Pollution is not static. Solar radiation lifts the atmospheric boundary layer between 1 PM and 4 PM, whereas nocturnal cooling and morning rush-hour traffic trap tailpipe soot near the pavement. AirAware AI segments the day into dynamic exposure windows with tailored Do’s and Don'ts.
 
 3. **Indoor Air Doctor (Zero Sensor Hallucination):**
    Most apps claim to know your indoor air without sensors. AirAware AI takes a rigorous, honest approach: an evidence-based hazard questionnaire assessing cooking fuels, kitchen exhaust, mosquito coils (which can emit particulate matter equal to 75–100 cigarettes), and wall mould. It prescribes zero-cost immediate fixes and busts myths (explaining why potted plants cannot replace certified HEPA H13 filtration).
@@ -35,16 +38,17 @@ That is why we built **AirAware AI** — an India-first, GenAI-powered environme
 
 5. **Hybrid Edge AI Architecture (₹0 Recurring Cost):**
    - **Local Browser Inference:** Runs open-weight language models (`Qwen2.5-0.5B`) directly inside the user's browser via **WebGPU WebLLM**, ensuring 100% data privacy and offline edge capability.
-   - **Protected Cloud AI:** Serverless Gemini 1.5 Flash proxied through Netlify Functions with strict rate-limiting.
+   - **Protected Cloud AI:** Serverless Gemini 1.5 Flash proxied through Netlify Functions with strict rate-limiting and CORS preflight handling.
    - **Deterministic Fallback:** A high-precision CPCB rule engine that ensures zero downtime, zero cost, and zero hallucination if WebGPU or cloud AI is unavailable.
 
 ---
 
 ### 🛠️ Built with Antigravity & Modern Web Stack
 - **Frontend:** React 18 + TypeScript + Tailwind CSS + Lucide Icons + Recharts
-- **Telemetry:** Open-Meteo Air Quality & Weather Telemetry + Geocoding API
+- **Telemetry & Models:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API + Open-Meteo Geocoding
 - **AI Layer:** WebLLM (`@mlc-ai/web-llm`) + Gemini API Serverless Proxy
 - **Evaluator Scenarios:** 6 built-in test fixtures verifying Mumbai families, Delhi professionals, senior citizens, missing monitoring stations, API outages, and AI fallbacks in 1-click.
+- **Verification:** 35/35 passing automated test assertions covering CPCB boundary calculations, validity rules, and safety gating.
 
 Check out the project repository: https://github.com/your-username/airaware-ai
 

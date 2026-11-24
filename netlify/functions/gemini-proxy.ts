@@ -1,10 +1,27 @@
 // Netlify Serverless Function: Protected Gemini Proxy
 // Keeps GEMINI_API_KEY secure on the server side
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Content-Type': 'application/json'
+};
+
 export async function handler(event: any) {
+  // Handle CORS preflight
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: CORS_HEADERS,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'Method Not Allowed' })
     };
   }
@@ -13,6 +30,7 @@ export async function handler(event: any) {
   if (!apiKey) {
     return {
       statusCode: 503,
+      headers: CORS_HEADERS,
       body: JSON.stringify({
         error: 'Cloud AI service unconfigured',
         details: 'GEMINI_API_KEY is not set in environment variables. Falling back to deterministic intelligence.'
@@ -27,6 +45,7 @@ export async function handler(event: any) {
     if (!prompt) {
       return {
         statusCode: 400,
+        headers: CORS_HEADERS,
         body: JSON.stringify({ error: 'Missing prompt' })
       };
     }
@@ -68,6 +87,7 @@ export async function handler(event: any) {
       const errText = await res.text();
       return {
         statusCode: res.status,
+        headers: CORS_HEADERS,
         body: JSON.stringify({ error: `Gemini API error: ${res.status}`, details: errText })
       };
     }
@@ -77,12 +97,13 @@ export async function handler(event: any) {
 
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: CORS_HEADERS,
       body: JSON.stringify({ reply })
     };
   } catch (error: any) {
     return {
       statusCode: 500,
+      headers: CORS_HEADERS,
       body: JSON.stringify({ error: 'AI Proxy processing failure', message: error.message })
     };
   }

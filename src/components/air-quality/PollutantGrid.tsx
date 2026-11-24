@@ -2,7 +2,7 @@ import React from 'react';
 import { AirQualityContext, HourlyForecastPoint } from '../../types/air-quality.ts';
 import { PollutantCard } from '../dashboard/PollutantCard.tsx';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { MapPin, Calendar, Database, ShieldAlert } from 'lucide-react';
+import { MapPin, Calendar, Database, ShieldAlert, Globe, Info } from 'lucide-react';
 
 interface Props {
   airQuality: AirQualityContext;
@@ -10,7 +10,17 @@ interface Props {
 }
 
 export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => {
-  const { pollutants, location, provider, stationName, stationDistanceKm, lastUpdated, freshness, freshnessExplanation } = airQuality;
+  const { 
+    pollutants, 
+    location, 
+    provider, 
+    stationName, 
+    stationDistanceKm, 
+    dataType, 
+    gridCoordinates, 
+    gridResolutionKm, 
+    scientificDisclaimer 
+  } = airQuality;
 
   const chartData = hourlyTrends.map(item => {
     let hourLabel = item.time;
@@ -32,11 +42,20 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
       {/* Title & Attribution Header */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
+              dataType === 'modelled_estimate' ? 'bg-blue-100 text-blue-800' : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              {dataType === 'modelled_estimate' ? 'Atmospheric Model Estimates' : 'Station Observations'}
+            </span>
+          </div>
           <h2 className="text-xl font-extrabold text-slate-900 tracking-tight font-sans">
-            Comprehensive Pollutant Telemetry — {location}
+            Pollutant Concentration Telemetry — {location}
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Standard 6-parameter monitoring per Central Pollution Control Board (CPCB) NAQI protocol.
+            {dataType === 'modelled_estimate' 
+              ? 'Modelled concentration estimates from Copernicus Atmosphere Monitoring Service (CAMS) across standard CPCB criteria parameters.'
+              : 'Continuous ambient air monitoring data from validated ground monitoring sensors.'}
           </p>
         </div>
 
@@ -47,8 +66,17 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
           </div>
           <span className="text-slate-300">•</span>
           <div className="flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-forest-700" />
-            <span>{stationName} {stationDistanceKm ? `(${stationDistanceKm} km)` : ''}</span>
+            {dataType === 'modelled_estimate' ? (
+              <>
+                <Globe className="w-3.5 h-3.5 text-blue-600" />
+                <span>Grid: {gridCoordinates ? `${gridCoordinates.latitude}°N, ${gridCoordinates.longitude}°E` : 'Regional (~11 km)'}</span>
+              </>
+            ) : (
+              <>
+                <MapPin className="w-3.5 h-3.5 text-forest-700" />
+                <span>{stationName} {stationDistanceKm ? `(${stationDistanceKm} km)` : ''}</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -65,8 +93,8 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
             <div>
-              <h3 className="text-sm font-bold text-slate-900">24-Hour Particulate Trend (PM2.5 vs PM10)</h3>
-              <p className="text-xs text-slate-500">Hourly concentration profile in µg/m³</p>
+              <h3 className="text-sm font-bold text-slate-900">24-Hour Particulate Profile (PM2.5 vs PM10)</h3>
+              <p className="text-xs text-slate-500">Hourly concentration profile in µg/m³ (Modelled Forecast Series)</p>
             </div>
             <div className="flex items-center gap-4 text-xs font-medium">
               <div className="flex items-center gap-1.5">
@@ -106,7 +134,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
             </ResponsiveContainer>
           </div>
           <p className="text-[11px] text-slate-400 mt-3 text-right">
-            Values sourced from regional monitoring telemetry. Peak spikes typically align with nocturnal boundary layer compression.
+            Values sourced from regional atmospheric model forecast grid. Nocturnal boundary layer compression causes typical late-evening particulate surges.
           </p>
         </div>
       )}
@@ -115,11 +143,12 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
       <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 text-xs text-slate-600 space-y-3">
         <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
           <ShieldAlert className="w-4 h-4 text-emerald-700" />
-          <span>CPCB NAQI Standard & Calculation Methodology</span>
+          <span>CPCB NAQI Methodology & Data Integrity Standard</span>
         </h4>
         <p className="leading-relaxed">
-          The National Air Quality Index (NAQI) in India is computed using piecewise linear interpolation across official CPCB break-point concentrations for 6 primary pollutants: PM2.5, PM10, NO₂, SO₂, CO, and O₃. 
-          To be officially valid, a reading must monitor at least three pollutants, of which one MUST be particulate matter (PM2.5 or PM10). The overall AQI corresponds to the highest calculated sub-index, and that specific pollutant is declared the <em>Prominent Pollutant</em>.
+          The National Air Quality Index (NAQI) established by the Central Pollution Control Board (CPCB) calculates piecewise sub-indices across 6 core criteria pollutants.
+          To maintain strict scientific integrity, AirAware AI distinguishes between <strong>Physical Ground Station Observations</strong> (direct physical measurements from CAAQMS) and <strong>Modelled Atmospheric Estimates</strong> (regional 11 km grid forecasts from CAMS/Open-Meteo). 
+          Indices derived from atmospheric models are clearly identified as <em>Indicative Derived Indices</em> rather than official government station reports.
         </p>
       </div>
 

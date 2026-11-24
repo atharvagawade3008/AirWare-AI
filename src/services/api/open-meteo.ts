@@ -6,14 +6,14 @@ function computeFreshness(dateIso: string): { freshness: DataFreshness; explanat
   try {
     const diffHours = (Date.now() - new Date(dateIso).getTime()) / (1000 * 60 * 60);
     if (diffHours < 2) {
-      return { freshness: 'fresh', explanation: 'Telemetry updated within the past 2 hours.' };
+      return { freshness: 'fresh', explanation: 'Atmospheric model run generated within the past 2 hours.' };
     } else if (diffHours < 6) {
-      return { freshness: 'delayed', explanation: `Telemetry is ${Math.round(diffHours)} hours old (delayed reporting).` };
+      return { freshness: 'delayed', explanation: `Model update is ${Math.round(diffHours)} hours old.` };
     } else {
-      return { freshness: 'stale', explanation: `Telemetry is older than ${Math.round(diffHours)} hours (stale data).` };
+      return { freshness: 'stale', explanation: `Model output is older than ${Math.round(diffHours)} hours (stale data).` };
     }
   } catch {
-    return { freshness: 'unavailable', explanation: 'Invalid timestamp from monitoring feed.' };
+    return { freshness: 'unavailable', explanation: 'Invalid timestamp from atmospheric model feed.' };
   }
 }
 
@@ -21,7 +21,7 @@ function getWeatherDescription(code: number): string {
   if (code === 0) return 'Clear sky';
   if (code === 1 || code === 2) return 'Mainly clear / partly cloudy';
   if (code === 3) return 'Overcast';
-  if (code === 45 || code === 48) return 'Hazy fog / smog accumulation';
+  if (code === 45 || code === 48) return 'Hazy fog / low inversion smog accumulation';
   if (code >= 51 && code <= 55) return 'Light drizzle';
   if (code >= 61 && code <= 65) return 'Rain showers (particulate washout)';
   if (code >= 80 && code <= 82) return 'Scattered showers';
@@ -89,7 +89,8 @@ export async function fetchLiveEnvironmentalData(
       value: curAir.pm2_5 !== undefined && curAir.pm2_5 !== null ? Number(curAir.pm2_5.toFixed(1)) : 0,
       unit: 'µg/m³',
       available: curAir.pm2_5 !== undefined && curAir.pm2_5 !== null,
-      averagingPeriodHours: 24
+      averagingPeriodHours: 24,
+      isModelled: true
     },
     {
       code: 'pm10',
@@ -98,7 +99,8 @@ export async function fetchLiveEnvironmentalData(
       value: curAir.pm10 !== undefined && curAir.pm10 !== null ? Number(curAir.pm10.toFixed(1)) : 0,
       unit: 'µg/m³',
       available: curAir.pm10 !== undefined && curAir.pm10 !== null,
-      averagingPeriodHours: 24
+      averagingPeriodHours: 24,
+      isModelled: true
     },
     {
       code: 'no2',
@@ -107,7 +109,8 @@ export async function fetchLiveEnvironmentalData(
       value: curAir.nitrogen_dioxide !== undefined && curAir.nitrogen_dioxide !== null ? Number(curAir.nitrogen_dioxide.toFixed(1)) : 0,
       unit: 'µg/m³',
       available: curAir.nitrogen_dioxide !== undefined && curAir.nitrogen_dioxide !== null,
-      averagingPeriodHours: 24
+      averagingPeriodHours: 24,
+      isModelled: true
     },
     {
       code: 'so2',
@@ -116,17 +119,19 @@ export async function fetchLiveEnvironmentalData(
       value: curAir.sulphur_dioxide !== undefined && curAir.sulphur_dioxide !== null ? Number(curAir.sulphur_dioxide.toFixed(1)) : 0,
       unit: 'µg/m³',
       available: curAir.sulphur_dioxide !== undefined && curAir.sulphur_dioxide !== null,
-      averagingPeriodHours: 24
+      averagingPeriodHours: 24,
+      isModelled: true
     },
     {
       code: 'co',
       name: 'Carbon Monoxide',
       chemicalFormula: 'CO',
-      // CO from Open-Meteo is provided in µg/m³, normalize to mg/m³ for display
+      // CO from Open-Meteo is provided in µg/m³, normalize to mg/m³ for CPCB standard comparison
       value: curAir.carbon_monoxide !== undefined && curAir.carbon_monoxide !== null ? Number((curAir.carbon_monoxide / 1000).toFixed(2)) : 0,
       unit: 'mg/m³',
       available: curAir.carbon_monoxide !== undefined && curAir.carbon_monoxide !== null,
-      averagingPeriodHours: 8
+      averagingPeriodHours: 8,
+      isModelled: true
     },
     {
       code: 'o3',
@@ -135,12 +140,13 @@ export async function fetchLiveEnvironmentalData(
       value: curAir.ozone !== undefined && curAir.ozone !== null ? Number(curAir.ozone.toFixed(1)) : 0,
       unit: 'µg/m³',
       available: curAir.ozone !== undefined && curAir.ozone !== null,
-      averagingPeriodHours: 8
+      averagingPeriodHours: 8,
+      isModelled: true
     }
   ];
 
-  // Compute Authentic Indian CPCB NAQI
-  const naqiCalculation = calculateNAQI(rawPollutants);
+  // Compute Indicative CPCB-derived Index for Model Data (NOT official CAAQMS station observation)
+  const naqiCalculation = calculateNAQI(rawPollutants, true); // true = model data
   const populatedPollutants = rawPollutants.map(p => ({
     ...p,
     subIndex: naqiCalculation.subIndices[p.code]
@@ -149,22 +155,34 @@ export async function fetchLiveEnvironmentalData(
   const timeIso = curAir.time || new Date().toISOString();
   const { freshness, explanation } = computeFreshness(timeIso);
 
+  // Accurate Grid metadata from Open-Meteo response
+  const gridLat = Number((airData.latitude || latitude).toFixed(3));
+  const gridLon = Number((airData.longitude || longitude).toFixed(3));
+
   const airQuality: AirQualityContext = {
     location: cityName,
     state: stateName,
     country: 'India',
     latitude,
     longitude,
-    provider: 'Open-Meteo Telemetry',
+    provider: 'CAMS Atmospheric Model (Open-Meteo)',
+    dataType: 'modelled_estimate',
+    indexClassification: naqiCalculation.indexClassification,
     aqi: naqiCalculation.aqi,
     aqiCategory: naqiCalculation.category || 'Satisfactory',
     prominentPollutant: naqiCalculation.prominentPollutant,
     pollutants: populatedPollutants,
-    stationName: `Regional Telemetry Grid (${cityName})`,
-    stationDistanceKm: 2.4,
+    
+    // Explicit model metadata — no fabricated station distances
+    modelName: 'Copernicus Atmosphere Monitoring Service (CAMS) Global Model',
+    gridCoordinates: { latitude: gridLat, longitude: gridLon },
+    gridResolutionKm: 11,
+    spatialResolutionNote: 'Regional atmospheric model grid cell (~11 km resolution). Does not represent a micro-local ground monitoring station outside a specific building.',
+
     lastUpdated: timeIso,
     freshness,
     freshnessExplanation: explanation,
+    scientificDisclaimer: 'This reading represents a modelled atmospheric estimate from CAMS / Open-Meteo, not an official CPCB ground monitoring station reading. Derived index applies official CPCB NAQI breakpoints for indicative comparison only.',
     isCalculatedNAQI: true
   };
 
@@ -175,7 +193,6 @@ export async function fetchLiveEnvironmentalData(
     const pm25Arr: number[] = airData.hourly.pm2_5 || [];
     const pm10Arr: number[] = airData.hourly.pm10 || [];
 
-    // Take past 12 entries and future 12 entries around current hour
     const nowHour = new Date().toISOString().slice(0, 13);
     const curIndex = times.findIndex(t => t.startsWith(nowHour));
     const startIdx = Math.max(0, curIndex >= 0 ? curIndex - 12 : times.length - 24);

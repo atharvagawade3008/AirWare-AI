@@ -93,17 +93,27 @@ export function generatePersonalizedRecommendations(
 
   // 4. COMMUTE PERSONALIZATION
   if (['two_wheeler', 'bicycle', 'walk'].includes(profile.commuteType)) {
-    if (category === 'Severe' || category === 'Very Poor') {
+    if (category === 'Severe' || category === 'Very Poor' || category === 'Poor') {
       actionItems.push({
         id: 'commute-high-exposure',
         category: 'commute',
-        priority: 'high',
+        priority: category === 'Poor' ? 'medium' : 'high',
         title: `Protect Against Direct Exhaust on ${profile.commuteType.replace('_', ' ')} Commute`,
-        description: `Traveling ${profile.commuteDistanceKm} km via open transport exposes you to tailpipe emission spikes that can be 3x higher than ambient monitoring stations.`,
-        actionableStep: 'Switch to metro, AC bus, or carpool if possible. If riding, wear an N95 mask with an exhalation seal.',
+        description: `Traveling ${profile.commuteDistanceKm} km via open transport during ${category} air exposes you to tailpipe emission spikes that can be 2-3x higher than ambient background levels.`,
+        actionableStep: 'Switch to metro, AC bus, or carpool if possible. If riding or walking in traffic, wear a fitted N95 respirator mask.',
         evidenceBasis: 'Urban Exposure Analysis - Clean Air Asia'
       });
       routineAdjustments.push(`Consider transit alternative over open ${profile.commuteType.replace('_', ' ')}.`);
+    } else if (category === 'Moderately Polluted') {
+      actionItems.push({
+        id: 'commute-moderate-exposure',
+        category: 'commute',
+        priority: 'info',
+        title: `Precaution on ${profile.commuteType.replace('_', ' ')} Route`,
+        description: `Traffic bottlenecks generate localized particulate spikes even on moderate air quality days.`,
+        actionableStep: 'Avoid idling directly behind older heavy diesel vehicles at signals.',
+        evidenceBasis: 'Urban Traffic Micro-environment Studies'
+      });
     }
   } else if (profile.commuteType === 'car_solo') {
     actionItems.push({

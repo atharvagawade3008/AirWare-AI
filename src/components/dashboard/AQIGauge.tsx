@@ -1,16 +1,30 @@
 import React from 'react';
 import { AirQualityContext, AQICategory } from '../../types/air-quality.ts';
 import { getAQIColor } from '../../intelligence/aqi/cpcb-calculator.ts';
-import { ShieldAlert, Info, MapPin, Activity } from 'lucide-react';
+import { ShieldAlert, Info, MapPin, Activity, Globe, Compass, Building2 } from 'lucide-react';
 
 interface Props {
   airQuality: AirQualityContext;
 }
 
 export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
-  const { aqi, aqiCategory, prominentPollutant, stationName, stationDistanceKm, provider, isCalculatedNAQI, freshness } = airQuality;
+  const { 
+    aqi, 
+    aqiCategory, 
+    prominentPollutant, 
+    stationName, 
+    stationDistanceKm, 
+    provider, 
+    dataType, 
+    indexClassification, 
+    gridCoordinates, 
+    gridResolutionKm, 
+    spatialResolutionNote,
+    scientificDisclaimer 
+  } = airQuality;
 
-  if (aqi === undefined) {
+  // Handle case where AQI cannot be calculated or station is missing
+  if (aqi === undefined || indexClassification === 'insufficient_data') {
     return (
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
         <div className="flex items-center justify-between">
@@ -19,7 +33,7 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
             <span>Air Quality Index</span>
           </div>
           <span className="px-2 py-0.5 text-xs font-semibold bg-rose-100 text-rose-800 rounded">
-            Station Unavailable
+            Insufficient Validated Data
           </span>
         </div>
 
@@ -29,7 +43,7 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
           </div>
           <h3 className="text-xl font-bold text-slate-800">No Verified AQI Available</h3>
           <p className="text-xs text-slate-500 mt-2 max-w-sm mx-auto">
-            {stationName || 'No continuous air quality monitoring station within immediate vicinity.'}
+            {stationName || 'No continuous air quality monitoring station within immediate vicinity satisfying CPCB validity criteria.'}
           </p>
           <div className="mt-4 inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-lg">
             <Info className="w-3.5 h-3.5 shrink-0" />
@@ -39,7 +53,7 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
 
         <div className="text-[11px] text-slate-400 border-t border-slate-100 pt-3 flex justify-between">
           <span>Source: {provider}</span>
-          <span>Distance: {stationDistanceKm ? `${stationDistanceKm} km` : 'N/A'}</span>
+          <span>{stationDistanceKm ? `Distance: ${stationDistanceKm} km` : 'No station in range'}</span>
         </div>
       </div>
     );
@@ -67,14 +81,54 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
     }
   };
 
+  // Honest label based on data pathway
+  const getIndexBadge = () => {
+    if (indexClassification === 'official_cpcb_naqi') {
+      return {
+        label: 'Official CPCB NAQI (Ground Station)',
+        badgeClass: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+        subtitle: 'National Air Quality Index (Ground Station)'
+      };
+    } else if (dataType === 'simulated_fixture') {
+      return {
+        label: 'Demonstration Test Fixture',
+        badgeClass: 'bg-purple-100 text-purple-800 border-purple-200',
+        subtitle: 'Simulated Evaluation Scenario'
+      };
+    } else {
+      return {
+        label: 'Indicative Derived Index (CAMS Model)',
+        badgeClass: 'bg-blue-100 text-blue-800 border-blue-200',
+        subtitle: 'Indicative CPCB-derived Index (Atmospheric Model)'
+      };
+    }
+  };
+
+  const badge = getIndexBadge();
+
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
       <div>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-slate-500 text-xs font-semibold uppercase tracking-wider">
-            <Activity className="w-4 h-4 text-emerald-600" />
-            <span>Indian CPCB NAQI Standard</span>
+        {/* Header Badges */}
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-slate-600 text-xs font-semibold">
+            {dataType === 'modelled_estimate' ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200 text-[11px]">
+                <Globe className="w-3.5 h-3.5" />
+                <span>Modelled Atmospheric Estimate</span>
+              </span>
+            ) : dataType === 'station_observation' ? (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px]">
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Physical Station Observation</span>
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-[11px]">
+                <span>Demonstration Scenario Fixture</span>
+              </span>
+            )}
           </div>
+
           <span 
             className="px-2.5 py-0.5 text-xs font-bold rounded-full text-white shadow-sm"
             style={{ backgroundColor: color }}
@@ -89,7 +143,7 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
             {aqi}
           </span>
           <div>
-            <div className="text-xs font-semibold text-slate-400 uppercase">National AQI</div>
+            <div className="text-xs font-semibold text-slate-500 uppercase">{badge.subtitle}</div>
             <div className="text-sm font-medium text-slate-700">
               Prominent: <span className="font-bold text-slate-900">{prominentPollutant || 'PM2.5'}</span>
             </div>
@@ -117,17 +171,34 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
         <p className="mt-4 text-xs text-slate-600 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
           {getCategoryDescription(aqiCategory)}
         </p>
+
+        {/* Spatial Resolution Warning for Modelled Data */}
+        {dataType === 'modelled_estimate' && spatialResolutionNote && (
+          <div className="mt-3 p-2 bg-blue-50/70 border border-blue-100 rounded-lg text-[11px] text-blue-900 flex items-start gap-1.5">
+            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+            <span>{spatialResolutionNote}</span>
+          </div>
+        )}
       </div>
 
       {/* Attribution footer */}
-      <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex flex-wrap justify-between items-center gap-2">
+      <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex flex-wrap justify-between items-center gap-2">
         <div className="flex items-center gap-1.5 truncate">
-          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-          <span className="truncate">{stationName}</span>
-          {stationDistanceKm && <span className="text-slate-400">({stationDistanceKm} km)</span>}
+          {dataType === 'modelled_estimate' ? (
+            <>
+              <Compass className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+              <span>Grid: {gridCoordinates ? `${gridCoordinates.latitude}°N, ${gridCoordinates.longitude}°E` : 'Regional Grid'} (~{gridResolutionKm || 11}km cell)</span>
+            </>
+          ) : (
+            <>
+              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+              <span className="truncate">{stationName}</span>
+              {stationDistanceKm && <span className="text-slate-400">({stationDistanceKm} km)</span>}
+            </>
+          )}
         </div>
-        <span className="font-medium text-slate-500">
-          {isCalculatedNAQI ? 'Calculated via CPCB Breakpoints' : 'Direct CPCB Feed'}
+        <span className="font-medium text-slate-600">
+          {provider}
         </span>
       </div>
     </div>
