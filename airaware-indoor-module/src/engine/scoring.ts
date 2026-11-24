@@ -152,6 +152,15 @@ export const FACTOR_DEFINITIONS: FactorDefinition[] = [
   },
 ];
 
+export const FACTOR_LABELS: Record<FactorId, string> = {
+  cooking_emissions: 'Cooking emissions',
+  indoor_combustion: 'Indoor combustion',
+  poor_ventilation: 'Ventilation',
+  dust_accumulation: 'Dust',
+  dampness_mould: 'Dampness & mould',
+  inadequate_filtration: 'Filtration',
+};
+
 const FACTOR_ID_ORDER = new Map<FactorId, number>(
   FACTOR_DEFINITIONS.map((definition, index) => [definition.id, index]),
 );
