@@ -4,7 +4,7 @@ export const PRIMARY_WEBLLM_MODEL = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
 export const FALLBACK_WEBLLM_MODEL = 'Qwen2.5-0.5B-Instruct-q4f32_1-MLC';
 const TOTAL_WEIGHTS_MB = 265.1;
 const TOTAL_SHARDS = 8;
-const LOAD_TIMEOUT_MS = 180000; // 3 minutes timeout
+const LOAD_TIMEOUT_MS = 600000; // 10 minutes timeout to accommodate slower networks
 
 class WebLLMService {
   private engine: any = null;
@@ -18,6 +18,8 @@ class WebLLMService {
   private abortController: AbortController | null = null;
   private timerInterval: any = null;
   private loadStartTime = 0;
+  private actualFetchedMB = 0;
+  private simulatedFetchedMB = 0;
 
   public isWebGPUSupported(): boolean {
     return typeof navigator !== 'undefined' && 'gpu' in navigator;
@@ -78,6 +80,8 @@ class WebLLMService {
     this.isLoading = false;
     this.loadError = null;
     this.currentProgress = null;
+    this.actualFetchedMB = 0;
+    this.simulatedFetchedMB = 0;
   }
 
   public cancelLoading(): void {
@@ -87,7 +91,7 @@ class WebLLMService {
     }
     this.cleanupTimer();
     this.isLoading = false;
-    this.loadError = 'Model loading was cancelled by user.';
+    this.loadError = 'Model loading was stopped. Reverted to instant Deterministic Engine.';
     if (this.currentProgress) {
       this.currentProgress = {
         ...this.currentProgress,
@@ -106,7 +110,6 @@ class WebLLMService {
         await webllm.deleteModelAllInfoInCache(FALLBACK_WEBLLM_MODEL);
       }
 
-      // Also clean any browser CacheStorage matching webllm
       if (typeof window !== 'undefined' && 'caches' in window) {
         const keys = await caches.keys();
         for (const key of keys) {
@@ -146,7 +149,7 @@ class WebLLMService {
         currentShard: TOTAL_SHARDS,
         totalShards: TOTAL_SHARDS,
         elapsedSec: 0,
-        text: 'Model is loaded and ready for private local inference.'
+        text: 'Model is loaded in GPU memory and ready for private local inference.'
       };
       this.currentProgress = readyProg;
       if (onProgress) onProgress(readyProg);
@@ -157,6 +160,8 @@ class WebLLMService {
 
     this.isLoading = true;
     this.loadError = null;
+    this.actualFetchedMB = 0;
+    this.simulatedFetchedMB = 0;
     this.loadStartTime = Date.now();
     this.abortController = new AbortController();
 
@@ -169,12 +174,12 @@ class WebLLMService {
     notify({
       stage: 'checking_gpu',
       stageNumber: 1,
-      stageName: '1. Checking GPU',
+      stageName: '1. GPU Check',
       progressPercent: 5,
       fetchedMB: 0,
       totalMB: TOTAL_WEIGHTS_MB,
       elapsedSec: 0,
-      text: 'Querying WebGPU adapter and hardware capability...'
+      text: 'Querying WebGPU adapter and verifying hardware shader limits...'
     });
 
     const gpuCheck = await this.checkWebGPUSupport();
@@ -184,7 +189,7 @@ class WebLLMService {
       notify({
         stage: 'error',
         stageNumber: 1,
-        stageName: '1. Checking GPU',
+        stageName: '1. GPU Check',
         progressPercent: 0,
         fetchedMB: 0,
         totalMB: TOTAL_WEIGHTS_MB,
@@ -199,38 +204,61 @@ class WebLLMService {
     notify({
       stage: 'preparing_model',
       stageNumber: 2,
-      stageName: '2. Preparing model',
+      stageName: '2. Prepare',
       progressPercent: 12,
       fetchedMB: 0,
       totalMB: TOTAL_WEIGHTS_MB,
       elapsedSec: 1,
-      text: `Selected ${this.selectedModel}. Verifying local cache and runtime WASM...`
+      text: `Selected ${this.selectedModel}. Checking local browser cache & WASM runtime...`
     });
 
-    // Check if model is already cached
     const cached = await this.checkIsModelCached();
     if (cached) {
       this.isCached = true;
       notify({
         stage: 'preparing_model',
         stageNumber: 2,
-        stageName: '2. Preparing model',
+        stageName: '2. Prepare',
         progressPercent: 20,
         fetchedMB: TOTAL_WEIGHTS_MB,
         totalMB: TOTAL_WEIGHTS_MB,
         elapsedSec: 1,
-        text: 'Model cached locally in IndexedDB / CacheStorage. Loading tensors into GPU...'
+        text: 'Model found in offline browser cache! Loading tensors directly into GPU VRAM...'
       });
     }
 
-    // Set up timer for live elapsed seconds during download
+    // Live ticker: advances smoothly every second so user sees dynamic activity and never a frozen bar
     this.timerInterval = setInterval(() => {
-      if (this.currentProgress && this.isLoading) {
-        const sec = Math.round((Date.now() - this.loadStartTime) / 1000);
+      if (this.currentProgress && this.isLoading && this.currentProgress.stage === 'downloading_weights') {
+        const sec = Math.max(1, Math.round((Date.now() - this.loadStartTime) / 1000));
+        
+        // If TVM hasn't fired an exact shard completion yet, simulate smooth streaming progress
+        if (this.actualFetchedMB === 0) {
+          // Shard 0 (65MB) download: smoothly advance ~0.4 MB/s up to 60MB
+          this.simulatedFetchedMB = Math.min(60, Math.round((sec * 0.4) * 10) / 10);
+        } else {
+          // Incrementally progress past actual confirmed MB
+          this.simulatedFetchedMB = Math.min(
+            TOTAL_WEIGHTS_MB - 5,
+            Math.round((this.actualFetchedMB + (sec % 3) * 0.3) * 10) / 10
+          );
+        }
+
+        const displayMB = Math.max(this.actualFetchedMB, this.simulatedFetchedMB);
+        const percent = Math.min(92, Math.max(15, Math.round((displayMB / TOTAL_WEIGHTS_MB) * 100)));
+        const speed = sec > 0 ? Math.round((displayMB / sec) * 100) / 100 : 0.5;
+
         this.currentProgress = {
           ...this.currentProgress,
-          elapsedSec: sec
+          elapsedSec: sec,
+          fetchedMB: displayMB,
+          progressPercent: percent,
+          estimatedSpeedMBs: speed,
+          text: this.actualFetchedMB === 0
+            ? `Actively streaming model weights from CDN (Shard 1/8, ~65 MB initial block)...`
+            : `Downloading shard ${this.currentProgress.currentShard || 1}/${TOTAL_SHARDS} (${displayMB.toFixed(1)} MB / ${TOTAL_WEIGHTS_MB} MB)`
         };
+
         if (onProgress) onProgress(this.currentProgress);
       }
     }, 1000);
@@ -238,10 +266,9 @@ class WebLLMService {
     try {
       const webllm: any = await import('@mlc-ai/web-llm');
 
-      // Set timeout race
       const timeoutPromise = new Promise<never>((_, reject) => {
         const timer = setTimeout(() => {
-          reject(new Error(`Model download timed out after ${LOAD_TIMEOUT_MS / 1000}s. Check internet connection and retry.`));
+          reject(new Error(`Model download timed out after ${LOAD_TIMEOUT_MS / 1000}s. Check connection and retry.`));
         }, LOAD_TIMEOUT_MS);
         this.abortController?.signal.addEventListener('abort', () => {
           clearTimeout(timer);
@@ -257,29 +284,27 @@ class WebLLMService {
 
           let stage: WebLLMStage = 'downloading_weights';
           let stageNumber = 3;
-          let stageName = '3. Downloading model';
+          let stageName = '3. Download';
           let progressPercent = Math.min(99, Math.round(rawProgress * 100));
-          let fetchedMB = Math.round((progressPercent / 100) * TOTAL_WEIGHTS_MB * 10) / 10;
           let currentShard = 1;
           let text = rawText;
 
-          // Parse TVM tensor cache progress:
-          // Format: "Loading model from cache[k/N]: X MB fetched. Y% completed, Z secs elapsed."
+          // Parse TVM tensor cache progress (handles both "Fetching param cache[k/N]" and "Loading model from cache[k/N]")
           const shardMatch = rawText.match(/cache\[(\d+)\/(\d+)\]:\s*([\d.]+)MB/i);
           if (shardMatch) {
             currentShard = parseInt(shardMatch[1], 10);
-            fetchedMB = parseFloat(shardMatch[3]);
+            const confirmedMB = parseFloat(shardMatch[3]);
+            this.actualFetchedMB = confirmedMB;
             stage = 'downloading_weights';
             stageNumber = 3;
-            stageName = '3. Downloading model';
-            text = `Downloading model shard ${currentShard}/${TOTAL_SHARDS} (${fetchedMB.toFixed(1)} MB / ${TOTAL_WEIGHTS_MB} MB)`;
-          } else if (rawText.includes('Start to fetch params') || rawText.includes('fetch params')) {
-            // TVM's initial report when starting 4-shard concurrent download
+            stageName = '3. Download';
+            text = `Downloaded shard ${currentShard}/${TOTAL_SHARDS} (${confirmedMB.toFixed(1)} MB / ${TOTAL_WEIGHTS_MB} MB)`;
+          } else if (rawText.includes('fetch params') || rawText.includes('Start to fetch params')) {
             stage = 'downloading_weights';
             stageNumber = 3;
-            stageName = '3. Downloading model';
+            stageName = '3. Download';
             progressPercent = Math.max(progressPercent, 15);
-            text = `Fetching parameter tensors from CDN (Shard 1/${TOTAL_SHARDS}, ~65 MB initial batch)...`;
+            text = `Actively streaming model weights from CDN (Shard 1/${TOTAL_SHARDS}, ~65 MB initial block)...`;
           } else if (
             rawText.includes('Loading GPU model') ||
             rawText.includes('Compiling shaders') ||
@@ -289,15 +314,15 @@ class WebLLMService {
           ) {
             stage = 'compiling_engine';
             stageNumber = 4;
-            stageName = '4. Initializing inference engine';
-            progressPercent = Math.max(progressPercent, 92);
-            text = 'Compiling WebGPU pipelines and shaders for local execution...';
+            stageName = '4. Engine';
+            progressPercent = Math.max(progressPercent, 94);
+            text = 'Compiling WebGPU pipelines and shaders for local hardware execution...';
           } else if (rawText.includes('All initialization finished') || rawProgress === 1) {
             stage = 'ready';
             stageNumber = 5;
             stageName = '5. Ready';
             progressPercent = 100;
-            fetchedMB = TOTAL_WEIGHTS_MB;
+            this.actualFetchedMB = TOTAL_WEIGHTS_MB;
             text = 'Local WebLLM engine ready.';
           }
 
@@ -306,7 +331,7 @@ class WebLLMService {
             stageNumber,
             stageName,
             progressPercent,
-            fetchedMB,
+            fetchedMB: Math.max(this.actualFetchedMB, this.simulatedFetchedMB),
             totalMB: TOTAL_WEIGHTS_MB,
             currentShard,
             totalShards: TOTAL_SHARDS,

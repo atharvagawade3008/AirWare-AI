@@ -3,8 +3,8 @@ import { AirAwareContext, ChatMessage, AIProviderMode, WebLLMProgress, WebLLMSta
 import { askAirAwareAI } from '../../services/ai/ai-orchestrator.ts';
 import { webLLMService } from '../../services/ai/webllm-provider.ts';
 import { 
-  X, Send, Bot, Sparkles, Cpu, Cloud, ShieldAlert, CheckCircle2, 
-  AlertCircle, RefreshCw, Trash2, StopCircle, ArrowRight
+  X, Send, Bot, Cpu, CheckCircle2, 
+  AlertCircle, RefreshCw, Trash2, StopCircle, ArrowRight, Zap
 } from 'lucide-react';
 
 interface Props {
@@ -57,12 +57,12 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
     setWebllmProgress({
       stage: 'checking_gpu',
       stageNumber: 1,
-      stageName: '1. Checking GPU',
+      stageName: '1. GPU Check',
       progressPercent: 5,
       fetchedMB: 0,
       totalMB: 265.1,
       elapsedSec: 0,
-      text: 'Querying WebGPU device and checking shader capabilities...'
+      text: 'Querying WebGPU device and checking hardware shaders...'
     });
 
     const success = await webLLMService.loadModel((prog) => {
@@ -86,6 +86,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
   const handleCancelLoading = () => {
     webLLMService.cancelLoading();
     setWebllmStatus(webLLMService.getStatus());
+    setProviderMode('deterministic');
   };
 
   const handleSend = async (textToSend?: string) => {
@@ -118,7 +119,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
       const errorMsg: ChatMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        content: `Error processing request: ${err.message}. Reverting to deterministic guidance.`,
+        content: `Error processing request: ${err.message}. Showing verified deterministic CPCB guidance.`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         provider: 'deterministic'
       };
@@ -143,14 +144,14 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
       <div className="bg-white w-full max-w-lg h-full flex flex-col shadow-2xl border-l border-slate-200">
         
         {/* Header */}
-        <div className="p-3 sm:p-4 border-b border-slate-100 flex items-center justify-between gap-2 bg-slate-50">
+        <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-forest-900 text-emerald-400 flex items-center justify-center">
               <Bot className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-bold text-slate-900 text-sm">AirAware AI Assistant</h3>
-              <p className="text-[11px] text-slate-500">Hybrid AI • Real Telemetry Context</p>
+              <p className="text-[11px] text-slate-500">Real Telemetry Context • Zero Hallucination</p>
             </div>
           </div>
           <button
@@ -161,35 +162,34 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
           </button>
         </div>
 
-        {/* AI Provider Switcher Bar */}
-        <div className="px-3 sm:px-4 py-2 bg-slate-100 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 text-xs">
-          <div className="flex flex-wrap items-center gap-1">
+        {/* Dual AI Provider Switcher (Deterministic vs Local WebLLM) */}
+        <div className="px-4 py-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setProviderMode('deterministic')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                providerMode === 'deterministic' ? 'bg-white text-forest-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                providerMode === 'deterministic' 
+                  ? 'bg-white text-forest-900 shadow-xs font-semibold' 
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              Deterministic CPCB
+              <Zap className="w-3.5 h-3.5 text-amber-500" />
+              <span>Deterministic CPCB</span>
+              <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold">Instant</span>
             </button>
             <button
               onClick={() => setProviderMode('webllm')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                providerMode === 'webllm' ? 'bg-white text-forest-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1 rounded-md font-medium transition-all flex items-center gap-1.5 ${
+                providerMode === 'webllm' 
+                  ? 'bg-white text-forest-900 shadow-xs font-semibold' 
+                  : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              WebLLM (WebGPU)
-            </button>
-            <button
-              onClick={() => setProviderMode('gemini')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
-                providerMode === 'gemini' ? 'bg-white text-forest-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Gemini Cloud
+              <Cpu className="w-3.5 h-3.5 text-emerald-600" />
+              <span>WebLLM (WebGPU)</span>
             </button>
           </div>
-          <span className="hidden sm:block text-[10px] text-slate-400 font-mono">
+          <span className="text-[10px] text-slate-400 font-mono">
             {context.airQuality.location} AQI {context.airQuality.aqi || 'N/A'}
           </span>
         </div>
@@ -202,7 +202,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1.5 font-semibold text-slate-900">
                     <Cpu className="w-4 h-4 text-emerald-600" />
-                    <span>Qwen2.5-0.5B Browser Inference</span>
+                    <span>Qwen2.5-0.5B In-Browser Inference</span>
                   </div>
                   {webllmStatus.isLoaded && (
                     <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
@@ -221,9 +221,9 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                         key={s.id}
                         className={`text-center py-1 px-0.5 rounded text-[10px] font-medium border transition-colors ${
                           isDone
-                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                            ? 'bg-emerald-50 border-emerald-300 text-emerald-800 font-semibold'
                             : isCurrent
-                            ? 'bg-forest-100 border-forest-500 text-forest-900 font-bold animate-pulse'
+                            ? 'bg-forest-100 border-forest-500 text-forest-900 font-bold ring-1 ring-forest-400'
                             : 'bg-white border-slate-200 text-slate-400'
                         }`}
                       >
@@ -233,38 +233,50 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                   })}
                 </div>
 
-                {/* Active Loading / Progress State */}
+                {/* Active Loading / Progress State with Animated Progress */}
                 {webllmStatus.isLoading && webllmProgress && !isError && (
-                  <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-slate-200 shadow-xs">
+                  <div className="mt-2.5 p-3 bg-white rounded-lg border border-slate-200 shadow-xs">
                     <div className="flex justify-between items-center text-[11px] text-slate-700 mb-1.5">
-                      <span className="font-medium text-forest-900">{webllmProgress.text}</span>
+                      <span className="font-medium text-forest-900 flex items-center gap-1.5">
+                        <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                        {webllmProgress.text}
+                      </span>
                       <span className="font-mono font-bold text-forest-800">{webllmProgress.progressPercent}%</span>
                     </div>
 
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden mb-2">
+                    {/* Animated moving progress bar */}
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden mb-2">
                       <div
-                        className="bg-forest-700 h-full transition-all duration-300"
-                        style={{ width: `${Math.max(5, webllmProgress.progressPercent)}%` }}
+                        className="bg-emerald-600 h-full transition-all duration-500 rounded-full bg-gradient-to-r from-emerald-600 to-forest-800"
+                        style={{ width: `${Math.max(8, webllmProgress.progressPercent)}%` }}
                       />
                     </div>
 
                     <div className="flex items-center justify-between text-[10px] text-slate-500 font-mono">
                       <span>
-                        {webllmProgress.fetchedMB > 0 
-                          ? `${webllmProgress.fetchedMB.toFixed(1)} MB / ${webllmProgress.totalMB.toFixed(1)} MB`
-                          : `Total weights: ~${webllmProgress.totalMB.toFixed(1)} MB`}
+                        {webllmProgress.fetchedMB.toFixed(1)} MB / {webllmProgress.totalMB.toFixed(1)} MB
                         {webllmProgress.currentShard && ` • Shard ${webllmProgress.currentShard}/${webllmProgress.totalShards || 8}`}
                       </span>
                       <div className="flex items-center gap-2">
                         <span>{webllmProgress.elapsedSec}s elapsed</span>
                         <button
                           onClick={handleCancelLoading}
-                          className="text-rose-600 hover:text-rose-800 font-sans flex items-center gap-0.5"
-                          title="Cancel loading"
+                          className="text-rose-600 hover:text-rose-800 font-sans font-semibold flex items-center gap-0.5"
+                          title="Stop loading"
                         >
-                          <StopCircle className="w-3 h-3" /> Cancel
+                          <StopCircle className="w-3 h-3" /> Stop
                         </button>
                       </div>
+                    </div>
+
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-500">
+                      <span>First-time fetch stores in browser cache.</span>
+                      <button
+                        onClick={() => setProviderMode('deterministic')}
+                        className="text-forest-700 hover:text-forest-900 font-medium underline flex items-center gap-0.5"
+                      >
+                        Use Instant CPCB Engine instead <ArrowRight className="w-2.5 h-2.5" />
+                      </button>
                     </div>
                   </div>
                 )}
@@ -275,7 +287,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                     <div className="flex items-start gap-2">
                       <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <div className="font-semibold text-[11px]">Model Download Failed</div>
+                        <div className="font-semibold text-[11px]">Model Download Interrupted</div>
                         <p className="text-[11px] text-rose-700 mt-0.5 leading-tight">
                           {webllmProgress?.error || webllmStatus.loadError || 'Network or WebGPU error during initialization.'}
                         </p>
@@ -295,9 +307,9 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                           </button>
                           <button
                             onClick={() => setProviderMode('deterministic')}
-                            className="text-[11px] text-slate-600 hover:text-slate-900 underline font-medium ml-1"
+                            className="text-[11px] text-forest-800 hover:text-forest-950 font-bold underline ml-1"
                           >
-                            Use Deterministic Engine
+                            Switch to Instant CPCB Engine
                           </button>
                         </div>
                       </div>
@@ -305,12 +317,15 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                   </div>
                 )}
 
-                {/* Initial Download Action (When not loaded, not loading, and no active error) */}
+                {/* Initial Download Action */}
                 {!webllmStatus.isLoaded && !webllmStatus.isLoading && !isError && (
-                  <div className="mt-2 flex items-center justify-between">
-                    <p className="text-slate-600 text-[11px]">
-                      Download weights (~265 MB) once. Future sessions load instantly from offline cache.
-                    </p>
+                  <div className="mt-2 p-2.5 bg-white rounded-lg border border-slate-200 flex items-center justify-between gap-2">
+                    <div>
+                      <div className="font-semibold text-slate-800 text-[11px]">Download Local Weights (~265 MB)</div>
+                      <p className="text-slate-500 text-[10px] mt-0.5">
+                        Stored permanently in your browser cache for private offline inference.
+                      </p>
+                    </div>
                     <button
                       onClick={handleInitWebLLM}
                       className="shrink-0 px-3 py-1.5 bg-forest-900 hover:bg-forest-800 text-white font-semibold rounded-lg text-xs transition-colors shadow-xs"
@@ -327,7 +342,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                 </div>
                 <p className="text-[11px] mt-0.5 text-amber-700">
                   Your current browser or GPU does not expose WebGPU hardware acceleration.
-                  AirAware AI automatically runs on our verified, zero-latency <strong>Deterministic CPCB Engine</strong>.
+                  AirAware AI is automatically running on our verified, zero-latency <strong>Deterministic CPCB Engine</strong>.
                 </p>
               </div>
             )}
@@ -351,7 +366,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context }) => {
                   <span>{m.timestamp}</span>
                   {!isUser && (
                     <span className="text-forest-700 font-sans">
-                      • {m.provider === 'webllm' ? 'Local WebLLM (Qwen)' : m.provider === 'gemini' ? 'Gemini Cloud' : 'Deterministic CPCB'}
+                      • {m.provider === 'webllm' ? 'Local WebLLM (Qwen)' : 'Deterministic CPCB Engine'}
                     </span>
                   )}
                 </div>

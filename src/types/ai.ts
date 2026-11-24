@@ -2,7 +2,7 @@ import { AirQualityContext } from './air-quality.ts';
 import { HouseholdProfile } from './profile.ts';
 import { WeatherContext } from './weather.ts';
 
-export type AIProviderMode = 'webllm' | 'gemini' | 'deterministic';
+export type AIProviderMode = 'webllm' | 'deterministic';
 
 export type WebLLMStage = 
   | 'checking_gpu' 
@@ -22,6 +22,7 @@ export interface WebLLMProgress {
   currentShard?: number;
   totalShards?: number;
   elapsedSec: number;
+  estimatedSpeedMBs?: number;
   text: string;
   error?: string;
 }

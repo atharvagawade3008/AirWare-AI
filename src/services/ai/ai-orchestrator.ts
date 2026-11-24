@@ -1,6 +1,5 @@
 import { AirAwareContext, AIProviderMode, AIResponse } from '../../types/ai.ts';
 import { runDeterministicAI } from './deterministic-provider.ts';
-import { runGeminiProxyAI } from './gemini-provider.ts';
 import { webLLMService } from './webllm-provider.ts';
 
 export async function askAirAwareAI(
@@ -9,29 +8,15 @@ export async function askAirAwareAI(
   preferredProvider?: AIProviderMode
 ): Promise<AIResponse> {
   // Strategy:
-  // 1. If user explicitly requests WebLLM and it is loaded, run WebLLM
+  // 1. If user explicitly requests WebLLM and it is loaded, run in-browser WebLLM
   if (preferredProvider === 'webllm' && webLLMService.getStatus().isLoaded) {
     try {
       return await webLLMService.generate(context, userPrompt);
-    } catch (e) {
-      console.warn('WebLLM inference failed, falling back:', e);
-    }
-  }
-
-  // 2. Try Gemini Cloud Function if preferred or default
-  if (preferredProvider === 'gemini' || !preferredProvider) {
-    try {
-      return await runGeminiProxyAI(context, userPrompt);
     } catch (e: any) {
-      console.info('Cloud AI unavailable (expected if no API key configured). Gracefully using Deterministic Engine:', e.message);
+      console.warn('WebLLM local inference failed, falling back to deterministic engine:', e.message);
     }
   }
 
-  // 3. Robust Deterministic Rule Engine fallback (Zero-cost, 100% reliable, zero hallucination)
-  const deterministicResult = runDeterministicAI(context, userPrompt);
-  if (preferredProvider === 'gemini') {
-    deterministicResult.isFallback = true;
-    deterministicResult.confidenceNote = 'Cloud AI key is unconfigured. Showing instant, deterministic CPCB-verified guidance.';
-  }
-  return deterministicResult;
+  // 2. High-precision Deterministic CPCB Rule Engine (Instant, zero-cost, 100% verified, private)
+  return runDeterministicAI(context, userPrompt);
 }
