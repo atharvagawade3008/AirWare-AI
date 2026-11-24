@@ -113,17 +113,17 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2 text-slate-600 text-xs font-semibold">
             {dataType === 'modelled_estimate' ? (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-200 border border-blue-200 dark:border-blue-900 text-[11px]">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-slate-800 text-blue-700 dark:text-slate-200 border border-blue-200 dark:border-slate-700 text-[11px]">
                 <Globe className="w-3.5 h-3.5" />
                 <span>Modelled Atmospheric Estimate</span>
               </span>
             ) : dataType === 'station_observation' ? (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-900 text-[11px]">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-slate-800 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-slate-700 text-[11px]">
                 <Building2 className="w-3.5 h-3.5" />
                 <span>Physical Station Observation</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-200 border border-amber-200 dark:border-amber-900 text-[11px]">
+              <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-amber-50 dark:bg-slate-800 text-amber-700 dark:text-amber-200 border border-amber-200 dark:border-slate-700 text-[11px]">
                 <span>Demonstration Scenario Fixture</span>
               </span>
             )}
@@ -174,8 +174,8 @@ export const AQIGauge: React.FC<Props> = ({ airQuality }) => {
 
         {/* Spatial Resolution Warning for Modelled Data */}
         {dataType === 'modelled_estimate' && spatialResolutionNote && (
-          <div className="mt-3 p-2 bg-blue-50/70 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900 rounded-lg text-[11px] text-blue-900 dark:text-blue-200 flex items-start gap-1.5">
-            <Info className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+          <div className="mt-3 p-2 bg-blue-50/70 dark:bg-slate-800/80 border border-blue-100 dark:border-slate-700 rounded-lg text-[11px] text-blue-900 dark:text-slate-300 flex items-start gap-1.5">
+            <Info className="w-3.5 h-3.5 text-blue-600 dark:text-slate-400 shrink-0 mt-0.5" />
             <span>{spatialResolutionNote}</span>
           </div>
         )}

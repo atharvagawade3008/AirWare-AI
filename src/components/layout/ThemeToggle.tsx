@@ -41,7 +41,7 @@ export const ThemeToggle: React.FC<Props> = ({ theme, onToggle }) => {
       {/* Moon icon (Dark mode side) */}
       <span
         className={`relative z-10 flex items-center justify-center w-6 h-6 transition-colors duration-200 ${
-          isDark ? 'text-indigo-400 font-bold scale-105' : 'text-slate-400 group-hover:text-slate-600'
+          isDark ? 'text-amber-400 font-bold scale-105' : 'text-slate-400 group-hover:text-slate-600'
         }`}
       >
         <Moon className="w-3.5 h-3.5 transition-transform duration-300 rotate-0 dark:-rotate-12" />

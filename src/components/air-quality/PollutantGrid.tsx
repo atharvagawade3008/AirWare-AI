@@ -57,7 +57,7 @@ export const PollutantGrid: React.FC<Props> = ({ airQuality, hourlyTrends }) => 
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider ${
-              dataType === 'modelled_estimate' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200'
+              dataType === 'modelled_estimate' ? 'bg-blue-100 text-blue-800 dark:bg-slate-800 dark:text-slate-200' : 'bg-emerald-100 text-emerald-800 dark:bg-slate-800 dark:text-emerald-300'
             }`}>
               {dataType === 'modelled_estimate' ? 'Atmospheric Model Estimates' : 'Station Observations'}
             </span>

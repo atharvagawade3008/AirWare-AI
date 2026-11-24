@@ -17,11 +17,11 @@
     color-scheme: dark;
   }
   .dark body {
-    @apply bg-[#0b0f19] text-slate-100;
+    @apply bg-[#0a0a0a] text-[#f5f5f5];
   }
 }
 
-/* Light / Dark Mode Tokens matching designer specification */
+/* Light / Dark Mode Tokens matching designer specification (different shades of black, 0% blue, 0% purple) */
 :root {
   --chart-axis: #64748b;
   --chart-grid: #f1f5f9;
@@ -30,11 +30,11 @@
   --chart-tooltip-text: #0f172a;
 }
 html.dark {
-  --chart-axis: #94a3b8;
-  --chart-grid: #1e293b;
-  --chart-tooltip-bg: #0f172a;
-  --chart-tooltip-border: #334155;
-  --chart-tooltip-text: #f8fafc;
+  --chart-axis: #737373;
+  --chart-grid: #202020;
+  --chart-tooltip-bg: #141414;
+  --chart-tooltip-border: #2c2c2c;
+  --chart-tooltip-text: #f5f5f5;
 }
 
 /* Smooth, non-janky theme transitions on color/background/border only (avoid animating layout/aqi bars). */
