@@ -222,7 +222,7 @@ describe('missing and skipped answers', () => {
     expect(partial.confidence).toBe('low');
     expect(partial.identifiedFactors.map((factor) => factor.id)).toEqual(['cooking_emissions']);
     expect(partial.answeredQuestions).toBe(3);
-    expect(partial.totalQuestions).toBe(20);
+    expect(partial.totalQuestions).toBe(19);
   });
 
   it('keeps the score inside 0–100 for any combination', () => {

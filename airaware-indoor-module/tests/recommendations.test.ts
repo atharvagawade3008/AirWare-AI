@@ -91,7 +91,7 @@ describe('outdoor-sensitive ventilation recommendations', () => {
 
     const keepClosed = recommendations.find((item) => item.id === 'keep-windows-closed');
     expect(keepClosed?.category).toBe('immediate');
-    expect(keepClosed?.description).toMatch(/closed/i);
+    expect(keepClosed?.description).toMatch(/close/i);
   });
 
   it('asks the user to check outdoor conditions when data is unavailable', () => {

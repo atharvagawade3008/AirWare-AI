@@ -141,7 +141,7 @@ const COPY: Record<
   'keep-closed-filter': {
     headline: 'Keep windows closed while outdoor air is polluted',
     detail:
-      'Prioritise indoor source control and filtration today rather than wide-open windows. If you need fresh air, ventilate briefly when the outdoor reading improves, and avoid the busiest traffic hours.',
+      'Keep windows closed while outdoor pollution is high, and prioritise indoor source control and filtration. If you need fresh air, ventilate briefly when the outdoor reading improves, and avoid the busiest traffic hours.',
   },
   unknown: {
     headline: 'Time ventilation with local outdoor conditions',

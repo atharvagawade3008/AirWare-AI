@@ -11,6 +11,16 @@ export type AQICategory =
 
 export type DataFreshness = 'fresh' | 'delayed' | 'stale' | 'unavailable';
 
+export type EnvironmentalDataType = 
+  | 'modelled_estimate'      // Atmospheric model forecast (CAMS / Open-Meteo)
+  | 'station_observation'   // Physical ground station (CPCB / CAAQMS / OpenAQ)
+  | 'simulated_fixture';     // Evaluator demonstration test fixture
+
+export type IndexClassification = 
+  | 'official_cpcb_naqi'     // Official ground station NAQI per CPCB criteria
+  | 'indicative_model_index' // Indicative derived index applying CPCB breakpoints to atmospheric model
+  | 'insufficient_data';     // Failed CPCB validity (fewer than 3 pollutants or missing PM)
+
 export interface PollutantReading {
   code: PollutantType;
   name: string;
@@ -21,6 +31,7 @@ export interface PollutantReading {
   category?: AQICategory;
   averagingPeriodHours?: number;
   available: boolean;
+  isModelled?: boolean;
 }
 
 export interface AirQualityContext {
@@ -29,17 +40,29 @@ export interface AirQualityContext {
   country: string;
   latitude: number;
   longitude: number;
-  provider: 'CPCB NAQI' | 'Open-Meteo Telemetry' | 'OpenAQ' | 'Simulated Test Fixture';
+  provider: 'CPCB CAAQMS Network' | 'CAMS Atmospheric Model (Open-Meteo)' | 'OpenAQ Network' | 'Simulated Test Fixture';
+  dataType: EnvironmentalDataType;
+  indexClassification: IndexClassification;
   aqi?: number;
   aqiCategory?: AQICategory;
   prominentPollutant?: string;
   pollutants: PollutantReading[];
+  
+  // Physical Station Metadata (ONLY for physical ground stations)
   stationName?: string;
   stationDistanceKm?: number;
+  
+  // Atmospheric Model Metadata (for Open-Meteo / CAMS)
+  modelName?: string;
+  gridCoordinates?: { latitude: number; longitude: number };
+  gridResolutionKm?: number;
+  spatialResolutionNote?: string;
+
   lastUpdated?: string;
   freshness: DataFreshness;
   freshnessExplanation?: string;
-  isCalculatedNAQI?: boolean; // true if derived using official CPCB mathematical breakpoints
+  scientificDisclaimer: string;
+  isCalculatedNAQI?: boolean;
 }
 
 export interface HourlyForecastPoint {

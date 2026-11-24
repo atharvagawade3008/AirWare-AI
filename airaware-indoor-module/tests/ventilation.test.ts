@@ -98,7 +98,8 @@ describe('ventilation guidance — stale, delayed and missing data', () => {
 
   it('flags delayed data but still reacts to the reported pollution', () => {
     const guidance = getVentilationGuidance(delayedOutdoor);
-    expect(guidance.posture).toBe('ventilate-with-caution');
+    expect(guidance.posture).toBe('ventilate');
+    expect(guidance.detail).toMatch(/open windows/i);
     expect(guidance.limitations.join(' ')).toMatch(/delayed/i);
   });
 

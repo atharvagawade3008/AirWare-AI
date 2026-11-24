@@ -16,7 +16,7 @@ describe('Indoor Air Doctor UI', () => {
     render(<IndoorAirDoctor />);
 
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/understand your indoor air/i);
-    expect(screen.getByText(/Indoor Air Risk Assessment/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Indoor Air Risk Assessment/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /start household check/i })).toBeInTheDocument();
     expect(screen.getByText(/does not measure indoor AQI/i)).toBeInTheDocument();
     expect(screen.getByText(/No indoor sensors required/i)).toBeInTheDocument();
@@ -41,14 +41,14 @@ describe('Indoor Air Doctor UI', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
     const result = onComplete.mock.calls[0][0] as IndoorAssessment;
     expect(result.answeredQuestions).toBe(1);
-    expect(result.totalQuestions).toBe(20);
+    expect(result.totalQuestions).toBe(19);
     expect(['low', 'moderate', 'high']).toContain(result.overallRisk);
     expect(result.disclaimer).toMatch(/not a measurement/i);
 
     expect(
       screen.getByRole('heading', { name: /indicative risk profile/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Not a measured AQI/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Not a measured AQI/i).length).toBeGreaterThan(0);
     expect(
       screen.getByText(/Time ventilation with local outdoor conditions/i),
     ).toBeInTheDocument();
@@ -77,7 +77,7 @@ describe('Indoor Air Doctor UI', () => {
     expect(result.confidence).toBe('low');
     expect(result.riskScore).toBeGreaterThan(0);
 
-    expect(screen.getByRole('note')).toHaveTextContent(/You answered 0 of 20 questions/i);
+    expect(screen.getByRole('note')).toHaveTextContent(/You answered 0 of 19 questions/i);
     expect(screen.getByRole('note')).toHaveTextContent(/never as evidence of clean air/i);
     expect(screen.getByText(/Limited confidence/i)).toBeInTheDocument();
     expect(screen.getByText(/No section had enough answers/i)).toBeInTheDocument();
@@ -93,8 +93,8 @@ describe('Indoor Air Doctor UI', () => {
     await advanceToResults(user);
 
     expect(
-      screen.getByText(/Keep windows closed while outdoor air is polluted/i),
-    ).toBeInTheDocument();
+      screen.getAllByText(/Keep windows closed while outdoor air is polluted/i).length,
+    ).toBeGreaterThan(0);
     expect(screen.getByText(/Reported outdoor AQI 186/i)).toBeInTheDocument();
     expect(screen.getByText(/Outdoor data: Recent/i)).toBeInTheDocument();
     expect(screen.queryByText(/Outdoor air looks suitable for ventilation/i)).toBeNull();

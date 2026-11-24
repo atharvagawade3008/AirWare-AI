@@ -17,7 +17,7 @@ plan. It is designed for homes **without indoor air-quality sensors**.
 
 | Stage | What the user gets |
 | --- | --- |
-| **1. Household assessment** | 20 short questions across 6 sections: cooking & kitchen ventilation, indoor activities/combustion, dust & cleanliness, moisture & dampness, air circulation, filtration & maintenance. Every question is optional. |
+| **1. Household assessment** | 19 short questions across 6 sections: cooking & kitchen ventilation, indoor activities/combustion, dust & cleanliness, moisture & dampness, air circulation, filtration & maintenance. Every question is optional. |
 | **2. Risk assessment** | A deterministic engine groups the answers into six weighted risk factors, scores each one, shows the evidence behind it, and gives an overall band: low / moderate / high. |
 | **3. Personalised action plan** | Recommendations grouped into **Immediate actions**, **Free or low-cost improvements**, **Long-term improvements** and **Habits to avoid**. Ventilation advice adapts to an outdoor AQI context supplied by the parent app. |
 
@@ -160,7 +160,7 @@ reason, and the results screen shows it.
 
 ### 5.5 Completeness and confidence
 
-`completeness` is the share of the 20 questions answered. Confidence is high at
+`completeness` is the share of the 19 questions answered. Confidence is high at
 ≥ 85%, medium at ≥ 60%, low below that. The results screen states how many
 questions were answered and warns that skipped areas are unknown, not safe.
 
