@@ -39,6 +39,15 @@ function mapFailure(status: number, code: unknown, serverMessage: unknown): AISe
     );
   }
 
+  if (code === 'model_not_found' || status === 404) {
+    return new AIServiceError(
+      'The configured AI model is currently unavailable. Showing verified CPCB guidance instead.',
+      'config',
+      status,
+      false
+    );
+  }
+
   if (code === 'not_configured' || code === 'misconfigured' || status === 503) {
     return new AIServiceError(
       'Cloud AI is temporarily unavailable. Showing verified CPCB guidance instead.',

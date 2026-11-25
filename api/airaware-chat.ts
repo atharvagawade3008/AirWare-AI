@@ -3,12 +3,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { GoogleGenAI } from '@google/genai';
 
-const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
+const MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 // Tried when the primary model answers 503 UNAVAILABLE (demand spike) or 429 (that
 // model's free-tier quota or rate limit is spent). Comma-separated, because quota and
 // rate limits apply per model, so each extra free Flash model adds real capacity.
 // Stays on free-tier Flash models; never switches to a paid model.
-const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash')
+const FALLBACK_MODELS = (
+  process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.1-flash-lite,gemini-3.8-flash,gemini-3.6-flash,gemini-3.5-flash'
+)
   .split(',')
   .map((name) => name.trim())
   .filter(Boolean);
@@ -346,9 +348,14 @@ async function handleChat(event: ChatEvent) {
     };
 
     // Answers must be complete, so the model does not spend its token budget silently
-    // thinking. Not every model accepts an explicit budget, so a rejection retries
-    // that same model once without it rather than failing the whole request.
+    // thinking. Lite and Gemma models reject thinkingConfig with 400 INVALID_ARGUMENT,
+    // so skip it for them up front to avoid a wasted round-trip; keep the 400 retry
+    // safety net for any other model that rejects it.
     const generate = async (model: string) => {
+      const supportsThinkingBudget = !/-lite\b|^gemma-/i.test(model);
+      if (!supportsThinkingBudget) {
+        return ai.models.generateContent({ model, contents, config: baseConfig } as any);
+      }
       try {
         return await ai.models.generateContent({
           model,
@@ -357,9 +364,6 @@ async function handleChat(event: ChatEvent) {
         } as any);
       } catch (error: any) {
         if (upstreamStatus(error) === 400) {
-          // Not every model accepts an explicit thinking budget (lite models reject
-          // it as an invalid argument). Retry this model once without the optional
-          // field; if it still fails, the caller moves on to the next model.
           return ai.models.generateContent({ model, contents, config: baseConfig } as any);
         }
         throw error;
@@ -410,10 +414,11 @@ async function handleChat(event: ChatEvent) {
         if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(errorText)) {
           quotaBlockedAt.set(model, Date.now());
         }
-        // 400 is per-model here (a config field that model does not accept), so it
-        // moves on to the next model instead of failing the whole request.
+        // 400/404 are per-model here (a config field or retired model name), so they
+        // move on to the next fallback model instead of failing the whole request.
         const transient =
           status === 400 ||
+          status === 404 ||
           status === 429 ||
           status === 503 ||
           status === 504 ||
@@ -462,8 +467,24 @@ async function handleChat(event: ChatEvent) {
       });
     }
 
+    if (status === 404 || /NOT_FOUND|is not found/i.test(errorText)) {
+      console.error('[airaware-chat] Gemini model not found (HTTP 404). Check GEMINI_MODEL and GEMINI_FALLBACK_MODEL.');
+      return json(404, {
+        error: 'The configured AI model is unavailable.',
+        code: 'model_not_found'
+      });
+    }
+
     if (status === 408 || status === 504 || /timed out|deadline exceeded|aborted|ETIMEDOUT/i.test(errorText)) {
       return json(504, { error: 'The AI request timed out. Please try again.', code: 'timeout' });
+    }
+
+    if (status === 503) {
+      console.error('[airaware-chat] Gemini service unavailable (HTTP 503).');
+      return json(503, {
+        error: 'The AI service is temporarily unavailable due to high demand. Please try again shortly.',
+        code: 'upstream_unavailable'
+      });
     }
 
     if (status && status >= 500) {
