@@ -29,5 +29,5 @@ lerna-debug.log*
 *.sln
 *.sw?
 
-# Netlify
-.netlify
+# Vercel
+.vercel

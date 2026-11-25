@@ -1,6 +1,5 @@
 // Vercel Serverless Function: Protected OpenAQ v3 Proxy
 // Keeps OPENAQ_API_KEY secure on the server side.
-// Equivalent to netlify/functions/openaq-proxy.ts, rewritten for Vercel.
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 

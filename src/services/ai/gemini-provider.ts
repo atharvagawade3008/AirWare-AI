@@ -1,9 +1,7 @@
 import { AIErrorKind, AIResponse, GeminiChatRequest } from '../../types/ai.ts';
 
-// The chat route is served by api/airaware-chat.ts on Vercel and by
-// netlify/functions/airaware-chat.ts on Netlify. Both call the same server code,
-// so the first path that answers with JSON wins and one build works on either host.
-const CHAT_ENDPOINTS = ['/api/airaware-chat', '/.netlify/functions/airaware-chat'];
+// The chat route is served by the Vercel Function in api/airaware-chat.ts.
+const CHAT_ENDPOINTS = ['/api/airaware-chat'];
 const CLIENT_TIMEOUT_MS = 25000;
 
 export class AIServiceError extends Error {
@@ -106,7 +104,7 @@ export async function askGemini(request: GeminiChatRequest): Promise<AIResponse>
 
     if (!result) {
       throw new AIServiceError(
-        'Could not reach the AirAware AI service. If you are running the app locally, start it with `netlify dev`.',
+        'Could not reach the AirAware AI service. If you are running the app locally, start it with `vercel dev`.',
         'network',
         0,
         true
@@ -137,7 +135,7 @@ export async function askGemini(request: GeminiChatRequest): Promise<AIResponse>
     }
 
     throw new AIServiceError(
-      'Could not reach the AirAware AI service. If you are running the app locally, start it with `netlify dev`.',
+      'Could not reach the AirAware AI service. If you are running the app locally, start it with `vercel dev`.',
       'network',
       0,
       true

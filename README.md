@@ -51,7 +51,7 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
    - Clear disclosure: Does not represent the micro-local air outside a user's building.
 2. **Official Station Observations (CPCB / CAAQMS / OpenAQ):**
    - Sourced from continuous ambient air monitoring stations.
-   - Sourced via OpenAQ v3 (Netlify serverless proxy with `X-API-Key`) or CPCB portal feeds.
+   - Sourced via OpenAQ v3 (Vercel serverless proxy with `X-API-Key`) or CPCB portal feeds.
    - Labeled as **"Physical Monitoring Station Observation"**.
    - Calculated as **"Official CPCB NAQI"** only when CPCB validity requirements (≥3 criteria pollutants, $\text{PM}_{2.5}$ or $\text{PM}_{10}$ mandatory) are satisfied.
 3. **Data Absence Transparency:**
@@ -93,7 +93,7 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 - Demonstrates collective action through citizen pledges (zero-idling school zones, transit switches, smoke-free homes).
 
 ### 🤖 8. Gemini Cloud AI Assistant
-- **Instant, zero-download chat:** Answers come from Google Gemini through a secure Netlify Function, so the assistant opens immediately on any device — no model download, no WebGPU, no GPU requirement.
+- **Instant, zero-download chat:** Answers come from Google Gemini through a secure Vercel Function, so the assistant opens immediately on any device — no model download, no WebGPU, no GPU requirement.
 - **Grounded in real telemetry:** Every request carries the current AQI, pollutant readings, station metadata, freshness, weather and household flags, with a system instruction that forbids inventing readings or diagnosing illness.
 - **Deterministic CPCB Engine fallback:** If Gemini is slow, rate-limited or unavailable, verified rule-based guidance answers instead and is clearly labelled as such.
 - Injects verified data type into AI system context so the assistant never claims a model forecast is a local rooftop sensor.
@@ -112,8 +112,8 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 - **Frontend Framework:** React 18 + Vite + TypeScript
 - **Styling & UI:** Tailwind CSS, Lucide React, Recharts
 - **Cloud AI:** Google Gemini through the official `@google/genai` SDK (`gemini-3.8-flash`, configurable), called only from the server
-- **Serverless Backend:** Netlify Functions (Node.js/TypeScript) with full CORS preflight handling
-- **APIs:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API, Open-Meteo Geocoding, OpenAQ v3 (optional proxy), Google Gemini 1.5 Flash (optional fallback)
+- **Serverless Backend:** Vercel Functions (Node.js/TypeScript) with full CORS preflight handling
+- **APIs:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API, Open-Meteo Geocoding, OpenAQ v3 (optional proxy), Google Gemini Flash (`gemini-3.8-flash`, configurable)
 
 ---
 
@@ -135,8 +135,8 @@ npm install
 # Run the automated tests
 npx tsx tests/intelligence.test.ts
 
-# Start the full app + Netlify Functions (Gemini chat works here)
-npx netlify dev
+# Start the full app + Vercel Functions (Gemini chat works here)
+npx vercel dev
 
 # Frontend only: no AI endpoint, chat falls back to the CPCB engine
 npm run dev
@@ -160,8 +160,7 @@ OPENAQ_API_KEY=
 
 ### How the AI is called (server-side only)
 ```
-Browser  ──POST──▶  /api/airaware-chat  (Vercel)
-                    /.netlify/functions/airaware-chat  (Netlify)  ──@google/genai──▶  Gemini API
+Browser  ──POST──▶  /api/airaware-chat  (Vercel Function)  ──@google/genai──▶  Gemini API
 (AirAwareContext)   (validates, rate-limits, maps errors)                   (system instruction + app data)
 ```
 - The browser never sees the key and never calls Google directly.
@@ -179,10 +178,10 @@ npm run build
 npm run preview
 ```
 
-Deployable to Netlify with zero configuration via included `netlify.toml`:
+Deployable to Vercel with zero configuration via the included `vercel.json`:
 - Build Command: `npm run build`
-- Publish Directory: `dist`
-- Functions Directory: `netlify/functions`
+- Output Directory: `dist`
+- Functions Directory: `api/` (auto-detected; `/api/airaware-chat` and `/api/openaq-proxy`)
 
 ---
 
@@ -201,17 +200,17 @@ Deployable to Netlify with zero configuration via included `netlify.toml`:
 ### Local development
 ```bash
 cp .env.example .env      # paste the real key into .env, never into tracked files
-npx netlify dev           # serves the app and /.netlify/functions/*
+npx vercel dev            # serves the app and /api/*
 ```
 `npm run dev` alone serves no functions, so the chat shows a labelled fallback answer instead.
 
-### Netlify deployment
-1. Netlify → **Site settings → Environment variables** → add `GEMINI_API_KEY` (and optionally the model variables).
-2. Keep the key out of `netlify.toml`, `.env.example` and the repository.
-3. Redeploy (**Deploys → Trigger deploy → Deploy site**) so the function picks up the new secret.
+### Vercel deployment
+1. Vercel → **Project → Settings → Environment Variables** → add `GEMINI_API_KEY` (and optionally the model variables).
+2. Keep the key out of `vercel.json`, `.env.example` and the repository.
+3. Redeploy (**Deployments → Redeploy**) so the function picks up the new secret.
 4. Verify the endpoint:
 ```bash
-curl -s -X POST https://YOUR-SITE.netlify.app/.netlify/functions/airaware-chat \
+curl -s -X POST https://YOUR-PROJECT.vercel.app/api/airaware-chat \
   -H 'Content-Type: application/json' \
   -d '{"message":"Is it safe to walk outside today?","history":[],"context":{"location":"Mumbai","standard":"CPCB","aqi":132,"aqiCategory":"Moderately Polluted","indexClassification":"indicative_model_index","dataType":"modelled_estimate","pollutants":[],"freshness":"fresh","household":{"householdSize":4,"children":true,"elderly":false,"respiratorySensitive":false,"hasAirPurifier":false,"cookingFuel":"piped_gas","commuteType":"public_transit","commuteDistanceKm":12,"outdoorExerciseTime":"morning"}}}'
 ```
