@@ -2,7 +2,7 @@ import { AirQualityContext } from './air-quality.ts';
 import { HouseholdProfile } from './profile.ts';
 import { WeatherContext } from './weather.ts';
 
-export type AIProviderMode = 'gemini' | 'deterministic';
+export type AIProviderMode = 'webllm' | 'deterministic';
 
 export type AIErrorKind =
   | 'quota'

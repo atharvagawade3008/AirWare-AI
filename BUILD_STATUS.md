@@ -1,55 +1,86 @@
 # BUILD STATUS — AirAware AI
 
-**Last Updated:** November 2026 (Gemini Cloud Removal & WebLLM Live Telemetry Fix)  
-**Overall Status:** Production Ready • Formally Audited • Verified  
-**Deployment Target:** Netlify (Zero-cost tier with Netlify Functions)  
-**Automated Test Suite:** 42/42 Passing Tests ([intelligence.test.ts](file:///c:/Users/nodefour/Desktop/AirWare%20AI/tests/intelligence.test.ts))  
-**Vulnerability Audit:** 0 Vulnerabilities (`npm audit`)
+**Last Updated:** November 2026 (WebLLM removed → Gemini Cloud AI + first-visit product tour)  
+**Overall Status:** Production ready for Netlify (Gemini key required for conversational AI)  
+**Deployment Target:** Netlify (Functions + static Vite build)  
+**Automated Test Suite:** 35/35 passing (`npx tsx tests/intelligence.test.ts`)  
+**Vulnerability Audit:** 0 vulnerabilities (`npm audit`)  
+**Production Build:** `npm run build` passes (TypeScript + Vite)
 
 ---
 
-## 1. Cloud AI Architecture Streamlining (Gemini Cloud Removed)
-- Per requirement, **Gemini Cloud AI has been completely removed** from the user interface and AI provider routing.
-- The assistant operates exclusively in two clear, private modes:
-  1. **Deterministic CPCB Engine** (Default): Instant zero-latency responses, ₹0 cost, zero hallucination, 100% mathematical fidelity to CPCB NAQI and household exposure rules.
-  2. **WebLLM In-Browser WebGPU**: Private, local Qwen2.5-0.5B inference running directly in the browser via WebGPU.
+## 1. Local inference removed
 
----
+WebLLM/WebGPU is no longer part of the application.
 
-## 2. WebLLM Model Loading Diagnostics & Stall Fix
-### Root Cause of "Stuck in Between"
-1. **Network Throughput & Initial Shard Size**:
-   - WebLLM's `Qwen2.5-0.5B-Instruct-q4f16_1-MLC` weights consist of 8 binary shards totaling 265.1 MB.
-   - The initial batch queues 4 shards concurrently, with Shard 0 alone being 64.9 MB.
-   - On connections where Hugging Face CDN downloads at ~0.08–0.4 MB/s, downloading 64.9 MB takes 60–120+ seconds.
-2. **Missing Shard Telemetry in TVM**:
-   - The underlying `@mlc-ai/web-llm` TVM engine uses browser `fetch` and `Cache.add(request)`. The browser Cache API emits zero byte-progress callbacks during the download of a single shard.
-   - In previous iterations, the progress percentage was held static at `15%` during the download of Shard 0, leading the user to perceive that the loading was frozen.
+- `@mlc-ai/web-llm` uninstalled; `webllm-provider.ts`, `web-llm.d.ts` and the model-loading UI deleted.
+- No model download, GPU detection, cache management, progress screens or initialization gates remain.
+- The assistant opens instantly and the dashboard never waits on an AI model.
 
-### Fix Implemented
-1. **Smooth Live Telemetry Heartbeat**:
-   - Implemented an active 1-second interval ticker that dynamically tracks elapsed time, computes real-time transfer rate, and continuously animates the progress bar and byte counter (`{fetchedMB} MB / 265.1 MB`).
-   - The progress indicator is animated with gradient pulses so the user visually sees active streaming.
-2. **Instant Alternative Gating**:
-   - A prominent button allows users to switch to the **Deterministic CPCB Engine** instantly at any second with zero waiting or download required.
-   - User can stop/cancel download via `[Stop]` at any time without freezing the application.
-3. **Timeout Extended**:
-   - Extended network timeout to 600 seconds to prevent prematurely killing slower connections.
+## 2. Gemini Cloud AI (server-side)
 
----
+`POST /.netlify/functions/airaware-chat` — implemented in `netlify/functions/airaware-chat.ts` with the official `@google/genai` SDK.
 
-## 3. Verified API Endpoints & Status
+| Concern | Implementation |
+|---|---|
+| Secret handling | `process.env.GEMINI_API_KEY`, server only. Never `VITE_`, never in the bundle, never logged or returned. |
+| Model | `GEMINI_MODEL` (default `gemini-3.8-flash`); `GEMINI_FALLBACK_MODEL` (default `gemini-3.5-flash`) on 503 UNAVAILABLE or 429. Free-tier quota is per model, per day, so the second model is a real second bucket. No paid-model switching. |
+| Output control | `GEMINI_MAX_OUTPUT_TOKENS` (default 1024), temperature 0.4. |
+| Timeout | 22s server-side SDK timeout + 25s client abort, retry offered to the user. |
+| Input validation | JSON body required, message 1–1500 chars, history capped at 6 turns, pollutants capped at 8, all context fields coerced and length-limited. |
+| Rate limiting | Best-effort in-memory limiter: 8 requests / 60s per client IP. Per-instance only (see limitations). |
+| Error mapping | 429 → `quota_exhausted` / `rate_limited`; 401/403 or invalid-key 400 → safe `misconfigured` (logged, no secret); 5xx → `upstream_unavailable`; timeout/504 → `timeout`; bad input → 400. |
+| Prompt safety | System instruction forbids invented readings, guarantees, diagnoses, ozone generators, plant-as-HEPA claims and exercise advice without readings; distinguishes station observations from modelled estimates and flags stale/unavailable data. |
+| Grounding | Real app data only: location/region, AQI + category + classification, pollutants with units/sub-indices/modelled flags, station name/distance, timestamp, freshness, weather, household flags, and existing rules-engine guidance. No names, no GPS coordinates. |
 
-| Service | Endpoint | Data Pathway | Status | Notes |
-|---|---|---|---|---|
-| Open-Meteo Geocoding | `https://geocoding-api.open-meteo.com/v1/search` | Spatial Lookup | **Verified 200 OK** | Free, instant search across Indian cities & districts |
-| Open-Meteo Weather | `https://api.open-meteo.com/v1/forecast` | Atmospheric Dispersion | **Verified 200 OK** | Real-time temperature, humidity, wind vector, inversion detection |
-| Open-Meteo Air Quality | `https://air-quality-api.open-meteo.com/v1/air-quality` | Numerical Model (CAMS) | **Verified 200 OK** | Modelled PM2.5, PM10, NO₂, SO₂, CO, O₃ + 24h forecast series |
-| OpenAQ v3 | `https://api.openaq.org/v3/locations` | Ground Station Network | **Verified 401/200** | Netlify serverless proxy with CORS & graceful fallback |
+Frontend path: `AIChatDrawer` → `askAirAwareAI` → `askGemini` → function. On any failure the drawer shows a labelled notice with **Retry**, and the deterministic CPCB engine produces the answer — never presented as Gemini output.
 
----
+## 3. Onboarding tour
 
-## 4. Production Build & Bundle Verification
-- Command: `npm run build` (`tsc && vite build`)
-- Result: **0 TypeScript errors, clean production bundle in `dist/`**.
-- Local Test Harness: `npx tsx tests/intelligence.test.ts` (**42/42 Passing Assertions**).
+`src/components/onboarding/ProductTour.tsx` — 8-step spotlight tour (Welcome, AQI, Daily routine, Indoor air, Cleaner swaps, AI assistant, Impact, Ready).
+
+- Four-panel overlay produces a true cutout with an animated emerald glow ring; the real component stays visible.
+- Switches to the required tab (and opens the assistant) before spotlighting, polls for the element, scrolls it into view, and keeps the ring synced on scroll/resize.
+- Card: title, description, "Why it matters", "Try this", step count, progress bar, Previous / Next / Skip Tour; bottom-sheet layout below 640px; card clamped to the viewport; Arrow keys and Escape supported.
+- Persistence in `localStorage` (`airaware_tour_status`); first visit only. Footer **Take a Tour** replays from step 1. Skip always closes immediately and returns to the dashboard.
+
+## 4. Verification performed (25 Nov 2026)
+
+| Check | Result |
+|---|---|
+| `npx tsc --noEmit` | Pass |
+| `npm run build` | Pass (~6s) |
+| `npx tsx tests/intelligence.test.ts` | 35 passed, 0 failed |
+| Function: non-POST request | 405 |
+| Function: broken JSON / empty message | 400 / 400 |
+| Function: missing `GEMINI_API_KEY` | 503 `not_configured` |
+| Function: invalid credentials | 503 `misconfigured`, response contains no key |
+| Function: 9 rapid requests, one IP | 9th → 429 `rate_limited` |
+| **Live Gemini request** (real key, real telemetry, AQI 132 Mumbai) | **200**, grounded answer quoting the supplied AQI |
+| **Live follow-up** (history included) | **200**, used the prior turn |
+| **Live stale-data turn** (AQI unavailable) | **200**, explicitly stated data unavailable |
+| Function over HTTP via `netlify dev` (`/.netlify/functions/airaware-chat`) | Route loads and validates; live calls returned 504 (Gemini stall) before per-model timeouts were added, then 429 once the free-tier quota was exhausted |
+| Chat UI: send, fallback notice, retry | Drawer opens instantly; fallback answer labelled "Verified CPCB engine (AI unavailable)"; quota notice + working Retry |
+| Tour steps 1–8 | Each step spotlights the correct live component; steps 4/5/7 switch tabs, step 6 opens the assistant |
+| Tour skip | Overlay removed, dashboard interactive, `airaware_tour_status` = `skipped` |
+| Returning visitor | Reload does **not** re-open the tour |
+| Tour layout | 380px floating card ≥640px wide; bottom-sheet card below 640px; always inside the viewport |
+| Frontend bundle secret scan | `grep -rl "AIza" dist/` → 0 files |
+
+## 5. Known limitations
+
+- **Model availability:** on 25 Nov 2026 `gemini-3.8-flash` and `gemini-3.7-flash` returned `503 UNAVAILABLE` ("high demand") for this key; `gemini-3.5-flash` answered in ~1.5s and served the successful live calls via the configured fallback. Set `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL` to whatever your project's free tier serves.
+- **Free-tier quota:** the key used for verification exhausted its Gemini free-tier quota during testing. Afterwards the endpoint correctly returned 429 `quota_exhausted` and the UI showed the labelled CPCB fallback with Retry. Live answers resume when the quota window resets; no paid tier is enabled automatically.
+- **Rate limiting is per function instance.** Netlify may run several instances, so the effective limit can be higher than 8/min/site. Add a durable store (e.g. Netlify Blobs/KV) before high-traffic public launch.
+- **No streaming:** answers arrive as one response; the UI shows a typing indicator instead.
+- **`npm run dev` (Vite only) exposes no functions**, so chat deliberately falls back with a message telling the developer to use `netlify dev`.
+- Tour persistence is local to the browser; there is no user account to sync it with.
+- Evaluator scenarios remain simulated fixtures and are labelled as such in the AI context.
+
+## 6. Deployment checklist
+
+1. Netlify → Site settings → Environment variables: `GEMINI_API_KEY` (required), optionally `GEMINI_MODEL`, `GEMINI_FALLBACK_MODEL`, `GEMINI_MAX_OUTPUT_TOKENS`.
+2. `GEMINI_API_KEY` must never be committed or prefixed with `VITE_`. `.env` is gitignored; `.env.example` holds placeholders only.
+3. Redeploy after adding secrets so the function receives `process.env`.
+4. Smoke test `/.netlify/functions/airaware-chat` with the curl example in README §7.
+5. `grep -r "AIza" dist/` must return nothing.

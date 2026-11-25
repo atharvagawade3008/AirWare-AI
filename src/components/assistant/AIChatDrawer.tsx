@@ -19,16 +19,31 @@ interface Notice {
 
 const now = () => new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+const buildWelcome = (ctx: AirAwareContext) =>
+  'Hello! I am **AirAware AI**, your environmental intelligence assistant for **' + ctx.airQuality.location + '**.\n\n' +
+  'Current verified AQI is **' + (ctx.airQuality.aqi || 'Unavailable') + ' (' + (ctx.airQuality.aqiCategory || 'Unknown') + ')**, ' +
+  'with telemetry from ' + ctx.airQuality.provider + '.\n\nHow can I help your family make safer decisions today?';
+
 export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context, guidanceSummary, planner }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Hello! I am **AirAware AI**, your environmental intelligence assistant for **${context.airQuality.location}**.\n\nCurrent verified AQI is **${context.airQuality.aqi || 'Unavailable'} (${context.airQuality.aqiCategory || 'Unknown'})**, with telemetry from ${context.airQuality.provider}.\n\nHow can I help your family make safer decisions today?`,
+      content: buildWelcome(context),
       timestamp: now(),
-      provider: 'gemini'
+      provider: 'deterministic'
     }
   ]);
+  // Keep the welcome bubble aligned with the latest telemetry once it arrives.
+  useEffect(() => {
+    const content = buildWelcome(context);
+    setMessages((prev) =>
+      prev.some((m) => m.id === 'welcome' && m.content !== content)
+        ? prev.map((m) => (m.id === 'welcome' ? { ...m, content } : m))
+        : prev
+    );
+  }, [context.airQuality.location, context.airQuality.aqi, context.airQuality.aqiCategory, context.airQuality.provider]);
+
   const [inputPrompt, setInputPrompt] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -57,7 +72,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context, guidan
       role: 'user',
       content: text,
       timestamp: now(),
-      provider: 'gemini'
+      provider: 'deterministic'
     };
 
     setMessages((prev) => [...prev, userMsg]);
@@ -124,7 +139,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context, guidan
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">AirAware AI Assistant</h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">Live telemetry context • Gemini Cloud AI</p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Live telemetry context • Deterministic CPCB Engine</p>
             </div>
           </div>
           <button
@@ -140,8 +155,8 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context, guidan
         <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
           <div className="flex items-center gap-1.5 font-medium text-forest-900 dark:text-emerald-200">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Gemini Cloud AI</span>
-            <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.2 rounded-full font-bold">Instant</span>
+            <span>Deterministic CPCB Engine</span>
+            <span className="text-[9px] bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-1.5 py-0.2 rounded-full font-bold">Always On</span>
           </div>
           <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
             {context.airQuality.location} AQI {context.airQuality.aqi || 'N/A'}
@@ -191,7 +206,7 @@ export const AIChatDrawer: React.FC<Props> = ({ isOpen, onClose, context, guidan
                   <span>{m.timestamp}</span>
                   {!isUser && (
                     <span className="text-forest-700 dark:text-emerald-300 font-sans">
-                      • {m.provider === 'gemini' ? 'Gemini Cloud AI' : m.isFallback ? 'Verified CPCB engine (AI unavailable)' : 'Verified CPCB engine'}
+                      • {m.provider === 'deterministic' ? 'Verified CPCB engine' : m.isFallback ? 'Verified CPCB engine (fallback)' : 'Verified CPCB engine'}
                     </span>
                   )}
                 </div>

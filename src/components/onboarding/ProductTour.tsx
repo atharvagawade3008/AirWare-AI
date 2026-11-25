@@ -102,6 +102,19 @@ interface Rect {
 const CARD_WIDTH = 380;
 const GAP = 16;
 const MOBILE_BREAKPOINT = 640;
+const SPOTLIGHT_TOP_OFFSET = 88;
+
+/** Sections can be taller than the viewport; spotlight a readable top slice of them. */
+function measureSpotlight(el: HTMLElement): Rect {
+  const box = el.getBoundingClientRect();
+  const maxHeight = Math.min(480, window.innerHeight * 0.55);
+  return {
+    top: Math.max(8, box.top),
+    left: box.left,
+    width: box.width,
+    height: Math.min(box.height, maxHeight)
+  };
+}
 
 interface ProductTourProps {
   isOpen: boolean;
@@ -122,7 +135,7 @@ export const ProductTour: React.FC<ProductTourProps> = ({
 }) => {
   const [stepIndex, setStepIndex] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
-  const [cardSize, setCardSize] = useState({ width: CARD_WIDTH, height: 320 });
+  const [cardHeight, setCardHeight] = useState(320);
   const [viewport, setViewport] = useState(() => ({ width: window.innerWidth, height: window.innerHeight }));
 
   const cardRef = useRef<HTMLDivElement>(null);
@@ -155,9 +168,11 @@ export const ProductTour: React.FC<ProductTourProps> = ({
     onClose('skipped');
   }, [onClose]);
 
-  // Reset to step 1 whenever the tour is (re)opened.
+  // Reset to step 1 and re-read the viewport whenever the tour is (re)opened.
   useEffect(() => {
-    if (isOpen) setStepIndex(0);
+    if (!isOpen) return;
+    setStepIndex(0);
+    setViewport({ width: window.innerWidth, height: window.innerHeight });
   }, [isOpen]);
 
   // Surface the right tab / assistant for each step, then locate its real element.
@@ -165,9 +180,7 @@ export const ProductTour: React.FC<ProductTourProps> = ({
     if (!isOpen) return;
     const current = STEPS[stepIndex];
     let cancelled = false;
-    let timer: number | undefined;
-
-    setRect(null);
+    const timers: number[] = [];
 
     if (current.tab && activeTabRef.current !== current.tab) onNavigate(current.tab);
     if (current.closeAssistant) onCloseAssistant();
@@ -175,67 +188,75 @@ export const ProductTour: React.FC<ProductTourProps> = ({
 
     const startedAt = Date.now();
 
-    const measure = (el: HTMLElement) => {
-      const r = el.getBoundingClientRect();
-      if (!cancelled) setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    };
-
     const attempt = () => {
-      if (cancelled) return;
-      const el = current.targetId ? document.getElementById(current.targetId) : null;
+      if (cancelled || !current.targetId) return;
+      const el = document.getElementById(current.targetId);
 
       if (!el) {
         if (Date.now() - startedAt < 1800) {
-          timer = window.setTimeout(attempt, 80);
-          return;
+          timers.push(window.setTimeout(attempt, 80));
         }
-        // Missing or conditionally rendered target: show the card centred, no spotlight.
+        // Missing or conditionally rendered target: the card simply centres itself.
         return;
       }
 
-      el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest' });
-      timer = window.setTimeout(() => {
-        if (cancelled) return;
-        measure(el);
-      }, 380);
+      // scrollIntoView is unreliable here (the app root uses overflow-x: clip),
+      // so scroll the window explicitly and align the target below the header.
+      const box = el.getBoundingClientRect();
+      window.scrollTo({
+        top: Math.max(0, box.top + window.scrollY - SPOTLIGHT_TOP_OFFSET),
+        behavior: 'auto'
+      });
     };
 
-    timer = window.setTimeout(attempt, current.openAssistant ? 260 : 60);
+    timers.push(window.setTimeout(attempt, current.openAssistant ? 260 : 60));
 
     return () => {
       cancelled = true;
-      if (timer) window.clearTimeout(timer);
+      timers.forEach((t) => window.clearTimeout(t));
     };
   }, [isOpen, stepIndex, onNavigate, onOpenAssistant, onCloseAssistant]);
 
-  // Keep the spotlight glued to the element while the page resizes or scrolls.
+  // Single source of truth for the spotlight: samples the real element so it stays
+  // glued to tabs that mount late, scrolling, sticky headers and window resizes.
   useEffect(() => {
-    if (!isOpen || !step.targetId) return;
+    if (!isOpen) return;
+    const targetId = STEPS[stepIndex].targetId;
 
-    const update = () => {
-      const el = document.getElementById(step.targetId!);
-      if (!el) return;
-      const r = el.getBoundingClientRect();
-      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-    };
-    const onResize = () => {
-      setViewport({ width: window.innerWidth, height: window.innerHeight });
-      update();
+    const sync = () => {
+      if (!targetId) {
+        setRect((prev) => (prev === null ? prev : null));
+        return;
+      }
+      const el = document.getElementById(targetId);
+      const next = el ? measureSpotlight(el) : null;
+      setRect((prev) =>
+        prev && next &&
+        prev.top === next.top &&
+        prev.left === next.left &&
+        prev.width === next.width &&
+        prev.height === next.height
+          ? prev
+          : next
+      );
     };
 
+    sync();
+    const interval = window.setInterval(sync, 150);
+    const onResize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     window.addEventListener('resize', onResize);
-    window.addEventListener('scroll', update, true);
+
     return () => {
+      window.clearInterval(interval);
       window.removeEventListener('resize', onResize);
-      window.removeEventListener('scroll', update, true);
     };
-  }, [isOpen, stepIndex, step.targetId]);
+  }, [isOpen, stepIndex]);
 
   // Measure the card so placement never clips.
   useLayoutEffect(() => {
     if (!isOpen || !cardRef.current) return;
     const el = cardRef.current;
-    const update = () => setCardSize({ width: el.offsetWidth, height: el.offsetHeight });
+    const update = () => setCardHeight(el.offsetHeight);
     update();
     const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
     observer?.observe(el);
@@ -267,30 +288,32 @@ export const ProductTour: React.FC<ProductTourProps> = ({
 
   const isMobile = viewport.width < MOBILE_BREAKPOINT;
 
+  const cardWidth = Math.min(CARD_WIDTH, viewport.width - GAP * 2);
+
   const cardStyle = useMemo<React.CSSProperties>(() => {
     if (isMobile) {
       return { left: 12, right: 12, bottom: 12, width: 'auto' };
     }
     if (!rect) {
       return {
-        left: Math.max(GAP, (viewport.width - cardSize.width) / 2),
-        top: Math.max(GAP, (viewport.height - cardSize.height) / 2),
-        width: cardSize.width
+        left: Math.max(GAP, (viewport.width - cardWidth) / 2),
+        top: Math.max(GAP, (viewport.height - cardHeight) / 2),
+        width: cardWidth
       };
     }
 
     const spaceBelow = viewport.height - (rect.top + rect.height);
-    const placeBelow = spaceBelow >= cardSize.height + GAP * 2 || rect.top < cardSize.height + GAP * 2;
+    const placeBelow = spaceBelow >= cardHeight + GAP * 2 || rect.top < cardHeight + GAP * 2;
     const top = placeBelow
-      ? Math.min(rect.top + rect.height + GAP, viewport.height - cardSize.height - GAP)
-      : Math.max(GAP, rect.top - cardSize.height - GAP);
+      ? Math.min(rect.top + rect.height + GAP, viewport.height - cardHeight - GAP)
+      : Math.max(GAP, rect.top - cardHeight - GAP);
     const left = Math.min(
-      Math.max(GAP, rect.left + rect.width / 2 - cardSize.width / 2),
-      Math.max(GAP, viewport.width - cardSize.width - GAP)
+      Math.max(GAP, rect.left + rect.width / 2 - cardWidth / 2),
+      Math.max(GAP, viewport.width - cardWidth - GAP)
     );
 
-    return { left, top: Math.max(GAP, top), width: cardSize.width };
-  }, [isMobile, rect, cardSize, viewport]);
+    return { left, top: Math.max(GAP, top), width: cardWidth };
+  }, [isMobile, rect, cardHeight, cardWidth, viewport]);
 
   if (!isOpen) return null;
 

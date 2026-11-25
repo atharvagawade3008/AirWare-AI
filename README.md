@@ -92,8 +92,10 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 ### 🤝 7. Community Impact Collective
 - Demonstrates collective action through citizen pledges (zero-idling school zones, transit switches, smoke-free homes).
 
-### 🤖 8. Grounded AI Assistant
-- **Deterministic CPCB Engine:** 100% reliable rule-based engine that answers questions instantly with zero hallucination, zero downtime, and no GPU or model download.
+### 🤖 8. Gemini Cloud AI Assistant
+- **Instant, zero-download chat:** Answers come from Google Gemini through a secure Netlify Function, so the assistant opens immediately on any device — no model download, no WebGPU, no GPU requirement.
+- **Grounded in real telemetry:** Every request carries the current AQI, pollutant readings, station metadata, freshness, weather and household flags, with a system instruction that forbids inventing readings or diagnosing illness.
+- **Deterministic CPCB Engine fallback:** If Gemini is slow, rate-limited or unavailable, verified rule-based guidance answers instead and is clearly labelled as such.
 - Injects verified data type into AI system context so the assistant never claims a model forecast is a local rooftop sensor.
 
 ### 🧪 9. Interactive Evaluator Scenarios (6 Test Fixtures)
@@ -109,6 +111,7 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 ## 4. Technology Stack
 - **Frontend Framework:** React 18 + Vite + TypeScript
 - **Styling & UI:** Tailwind CSS, Lucide React, Recharts
+- **Cloud AI:** Google Gemini through the official `@google/genai` SDK (`gemini-3.8-flash`, configurable), called only from the server
 - **Serverless Backend:** Netlify Functions (Node.js/TypeScript) with full CORS preflight handling
 - **APIs:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API, Open-Meteo Geocoding, OpenAQ v3 (optional proxy), Google Gemini 1.5 Flash (optional fallback)
 
@@ -129,27 +132,40 @@ cd airaware-ai
 # Install dependencies
 npm install
 
-# Run the 35 automated tests
+# Run the automated tests
 npx tsx tests/intelligence.test.ts
 
-# Start local development server
+# Start the full app + Netlify Functions (Gemini chat works here)
+npx netlify dev
+
+# Frontend only: no AI endpoint, chat falls back to the CPCB engine
 npm run dev
 ```
 
-### Environment Variables (Optional)
-Copy `.env.example` to `.env.local`:
+### Environment Variables
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 ```env
-# Optional: Google Gemini API key for Cloud AI fallback.
-# Kept server-side in Netlify Functions. Never exposed to browser.
-GEMINI_API_KEY=
+# Required for the AI assistant. Server-side only — never VITE_ prefixed.
+GEMINI_API_KEY=YOUR_GEMINI_API_KEY
+GEMINI_MODEL=gemini-3.8-flash
+GEMINI_FALLBACK_MODEL=gemini-3.5-flash
+GEMINI_MAX_OUTPUT_TOKENS=1024
 
-# Optional: OpenAQ v3 API Key for ground station proxy.
+# Optional: OpenAQ v3 API Key for the ground-station proxy.
 OPENAQ_API_KEY=
 ```
-*Note: AirAware AI operates at 100% functionality even when both keys are empty, using verified Open-Meteo telemetry and the deterministic CPCB intelligence engine.*
+*Get a free key at <https://aistudio.google.com/apikey>. Without `GEMINI_API_KEY` the app still works at 100% functionality using verified Open-Meteo telemetry and the deterministic CPCB engine; only the conversational AI is disabled.*
+
+### How the AI is called (server-side only)
+```
+Browser  ──POST──▶  /.netlify/functions/airaware-chat  ──@google/genai──▶  Gemini API
+(AirAwareContext)   (validates, rate-limits, maps errors)                   (system instruction + app data)
+```
+- The browser never sees the key and never calls Google directly.
+- The function validates the message (≤1500 chars), caps history at 6 turns, limits output tokens, applies a 22s timeout and a best-effort 8 requests/minute per IP limiter, and returns typed errors (`quota_exhausted`, `rate_limited`, `timeout`, `misconfigured`, `upstream_unavailable`).
+- If Gemini fails, the frontend answers from the deterministic CPCB engine and labels the message and reason honestly.
 
 ---
 
@@ -169,5 +185,52 @@ Deployable to Netlify with zero configuration via included `netlify.toml`:
 
 ---
 
-## 7. License
+## 7. Gemini Cloud AI & Product Tour
+
+### Required secrets
+| Variable | Required | Purpose |
+|---|---|---|
+| `GEMINI_API_KEY` | Yes (for AI chat) | Server-side Gemini Developer API key |
+| `GEMINI_MODEL` | No (default `gemini-3.8-flash`) | Primary model |
+| `GEMINI_FALLBACK_MODEL` | No (default `gemini-3.5-flash`) | Used when the primary model returns 503 UNAVAILABLE or 429 (that model's daily quota is spent) |
+| `GEMINI_MAX_OUTPUT_TOKENS` | No (default `1024`) | Output cap per answer. Flash models spend thinking tokens from this cap, so keep room for the reply |
+| `GEMINI_TIMEOUT_MS` | No (default `8000`) | Per-model attempt timeout |
+| `GEMINI_TOTAL_BUDGET_MS` | No (default `18000`) | Total budget across primary + fallback |
+
+### Local development
+```bash
+cp .env.example .env      # paste the real key into .env, never into tracked files
+npx netlify dev           # serves the app and /.netlify/functions/*
+```
+`npm run dev` alone serves no functions, so the chat shows a labelled fallback answer instead.
+
+### Netlify deployment
+1. Netlify → **Site settings → Environment variables** → add `GEMINI_API_KEY` (and optionally the model variables).
+2. Keep the key out of `netlify.toml`, `.env.example` and the repository.
+3. Redeploy (**Deploys → Trigger deploy → Deploy site**) so the function picks up the new secret.
+4. Verify the endpoint:
+```bash
+curl -s -X POST https://YOUR-SITE.netlify.app/.netlify/functions/airaware-chat \
+  -H 'Content-Type: application/json' \
+  -d '{"message":"Is it safe to walk outside today?","history":[],"context":{"location":"Mumbai","standard":"CPCB","aqi":132,"aqiCategory":"Moderately Polluted","indexClassification":"indicative_model_index","dataType":"modelled_estimate","pollutants":[],"freshness":"fresh","household":{"householdSize":4,"children":true,"elderly":false,"respiratorySensitive":false,"hasAirPurifier":false,"cookingFuel":"piped_gas","commuteType":"public_transit","commuteDistanceKm":12,"outdoorExerciseTime":"morning"}}}'
+```
+5. Confirm no key reached the browser:
+```bash
+npm run build
+grep -r "AIza" dist/ || echo "No API key in frontend bundle"
+```
+
+### Free-tier and failure behaviour
+- Requests are validated, capped and throttled; ordinary dashboard interactions never call Gemini.
+- **429 quota:** the user sees a temporary usage-limit message plus the verified CPCB guidance; the app does not switch to a paid model.
+- **401/403:** logged as a safe configuration error with no secret in the response.
+- **500/503 (after one retry and the configured fallback model):** temporary-unavailability message.
+- **Timeout:** the user is offered a retry.
+
+### Product tour
+The first visit opens an 8-step spotlight tour (Welcome → AQI → Daily routine → Indoor air → Cleaner swaps → AI assistant → Impact → Ready). It dims the page with a real cutout and glow around each live component, switches tabs automatically, and always offers **Skip Tour**. Completion or skip status is stored in `localStorage` (`airaware_tour_status`), and the footer **Take a Tour** link replays it from step 1.
+
+---
+
+## 8. License
 MIT License. Open for educational, public health, and non-commercial climate intelligence initiatives.
