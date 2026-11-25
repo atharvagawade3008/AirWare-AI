@@ -34,9 +34,9 @@
 ---
 
 ### Sequence 5: Hybrid GenAI Assistant in Action (2:00 - 2:30)
-- **Visual:** Click "Ask AI" in the header to open the drawer. Click the prompt chip: *"Is it safe for my children to play outside today?"*. Switch between Deterministic and WebLLM / Gemini modes.
+- **Visual:** Click "Ask AI" in the header to open the drawer. Click the prompt chip: *"Is it safe for my children to play outside today?"*.
 - **Voiceover:**
-  > "AirAware AI features a hybrid AI architecture. It can run open-weight language models directly in your browser using WebGPU through WebLLM for zero-cost, private inference, fallback to serverless Gemini, or use our deterministic CPCB engine. The AI explicitly knows whether data is modelled or observed, ensuring zero hallucinations."
+  > "AirAware AI answers instantly through a deterministic CPCB engine. It needs no GPU, no model download and no API key, and it explicitly knows whether data is modelled or observed, ensuring zero hallucinations."
 
 ---
 

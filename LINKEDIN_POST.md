@@ -36,20 +36,18 @@ That is why we built **AirAware AI** — an India-first, GenAI-powered environme
 4. **Cleaner Choices & What-If Impact Calculator:**
    Allows commuters to calculate avoided greenhouse gas emissions (kg CO₂e) and annual fuel savings using ARAI and Central Electricity Authority carbon-intensity factors. Crucially, it features an **AQI safety gate**: AirAware AI *never* indiscriminately recommends outdoor cycling or walking when AQI > 150, prioritizing pulmonary safety over generic fitness advice.
 
-5. **Hybrid Edge AI Architecture (₹0 Recurring Cost):**
-   - **Local Browser Inference:** Runs open-weight language models (`Qwen2.5-0.5B`) directly inside the user's browser via **WebGPU WebLLM**, ensuring 100% data privacy and offline edge capability.
-   - **Protected Cloud AI:** Serverless Gemini 1.5 Flash proxied through Netlify Functions with strict rate-limiting and CORS preflight handling.
-   - **Deterministic Fallback:** A high-precision CPCB rule engine that ensures zero downtime, zero cost, and zero hallucination if WebGPU or cloud AI is unavailable.
+5. **Grounded AI Architecture (₹0 Recurring Cost):**
+   - **Deterministic CPCB Engine:** A high-precision rule engine that answers instantly, fully offline, with zero downtime, zero cost, zero hallucination, and no GPU or model download.
 
 ---
 
 ### 🛠️ Built with Antigravity & Modern Web Stack
 - **Frontend:** React 18 + TypeScript + Tailwind CSS + Lucide Icons + Recharts
 - **Telemetry & Models:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API + Open-Meteo Geocoding
-- **AI Layer:** WebLLM (`@mlc-ai/web-llm`) + Gemini API Serverless Proxy
+- **AI Layer:** Deterministic CPCB Intelligence Engine (fully local, no GPU or API key)
 - **Evaluator Scenarios:** 6 built-in test fixtures verifying Mumbai families, Delhi professionals, senior citizens, missing monitoring stations, API outages, and AI fallbacks in 1-click.
 - **Verification:** 35/35 passing automated test assertions covering CPCB boundary calculations, validity rules, and safety gating.
 
 Check out the project repository: https://github.com/your-username/airaware-ai
 
-*#AirQuality #GenAI #Sustainability #ClimateTech #CPCB #CleanAir #WebGPU #BuildInPublic #India*
+*#AirQuality #GenAI #Sustainability #ClimateTech #CPCB #CleanAir #BuildInPublic #India*

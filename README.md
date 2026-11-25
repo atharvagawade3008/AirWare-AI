@@ -2,7 +2,7 @@
 
 > **Competition Track:** Three-Day Intensive Build | Hybrid GenAI | India-First Decision Intelligence  
 > **Tagline:** *Breathe smarter. Live healthier. Make every action count.*  
-> **Architecture:** Zero-Cost Serverless + Browser WebLLM (WebGPU) + Deterministic CPCB NAQI Engine  
+> **Architecture:** Zero-Cost Serverless + Deterministic CPCB NAQI Engine  
 > **Pre-Submission Engineering Audit Status:** PASSED (35/35 Automated Tests • 0 Vulnerabilities • Strict Data Classification)
 
 ---
@@ -92,10 +92,8 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 ### 🤝 7. Community Impact Collective
 - Demonstrates collective action through citizen pledges (zero-idling school zones, transit switches, smoke-free homes).
 
-### 🤖 8. Hybrid GenAI Orchestration
-- **Local Browser Inference (WebLLM):** Runs open-weight LLMs (`Qwen2.5-0.5B`) directly in-browser via WebGPU with progress tracking.
-- **Protected Cloud AI Fallback (Gemini 1.5 Flash):** Proxied securely through Netlify Serverless Functions without exposing API keys.
-- **Deterministic CPCB Engine:** 100% reliable rule-based fallback that answers questions instantly with zero hallucination and zero downtime.
+### 🤖 8. Grounded AI Assistant
+- **Deterministic CPCB Engine:** 100% reliable rule-based engine that answers questions instantly with zero hallucination, zero downtime, and no GPU or model download.
 - Injects verified data type into AI system context so the assistant never claims a model forecast is a local rooftop sensor.
 
 ### 🧪 9. Interactive Evaluator Scenarios (6 Test Fixtures)
@@ -104,14 +102,13 @@ AirAware AI enforces strict scientific honesty and **never misrepresents model f
 3. **Senior Citizen Household:** Inversion avoidance, cardiovascular protection.
 4. **Missing Monitoring Station:** Rural/remote location; transparently states station absence with zero fabricated data.
 5. **API Outage / Network Offline:** Demonstrates graceful degradation, stale caching, and error resilience.
-6. **AI Fallback:** Operates seamlessly when cloud AI is unconfigured and WebGPU is unavailable.
+6. **Offline / Low-End Device:** Answers instantly through the deterministic CPCB engine with no cloud AI, GPU, or model download.
 
 ---
 
 ## 4. Technology Stack
 - **Frontend Framework:** React 18 + Vite + TypeScript
 - **Styling & UI:** Tailwind CSS, Lucide React, Recharts
-- **Local AI:** WebLLM (`@mlc-ai/web-llm`) with WebGPU acceleration
 - **Serverless Backend:** Netlify Functions (Node.js/TypeScript) with full CORS preflight handling
 - **APIs:** Open-Meteo Air Quality (CAMS Atmospheric Model) & Weather API, Open-Meteo Geocoding, OpenAQ v3 (optional proxy), Google Gemini 1.5 Flash (optional fallback)
 

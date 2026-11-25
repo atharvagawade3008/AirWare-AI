@@ -317,9 +317,9 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
   },
   {
     id: 'ai-unavailable',
-    name: 'Scenario 6: Cloud AI Unavailable / Browser Incompatible',
-    badge: 'Hybrid AI Fallback',
-    description: 'User has no cloud API key configured and browser has no WebGPU hardware acceleration.',
+    name: 'Scenario 6: Offline / Low-End Device',
+    badge: 'Deterministic Engine',
+    description: 'User has no API key configured and runs on a low-end device with no GPU acceleration.',
     expectedOutcome: 'System automatically routes to the deterministic CPCB-aligned rule engine. Zero downtime, zero broken chats.',
     forceAiError: true,
     profile: {
@@ -357,7 +357,7 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
       freshness: 'fresh',
       freshnessExplanation: 'Continuous ambient air monitoring active.',
       isCalculatedNAQI: false,
-      scientificDisclaimer: 'Hybrid AI Fallback Demo: Verifies that chat falls back gracefully to the deterministic CPCB rule engine.',
+      scientificDisclaimer: 'Deterministic Engine Demo: Verifies that chat answers instantly through the deterministic CPCB rule engine with no cloud AI, GPU, or model download.',
       pollutants: [
         { code: 'pm25', name: 'PM2.5', chemicalFormula: 'PM₂.₅', value: 98.2, unit: 'µg/m³', subIndex: 215, category: 'Poor', available: true },
         { code: 'pm10', name: 'PM10', chemicalFormula: 'PM₁₀', value: 180.0, unit: 'µg/m³', subIndex: 153, category: 'Moderately Polluted', available: true },

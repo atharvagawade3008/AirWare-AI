@@ -113,10 +113,10 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
           <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-forest-900 text-emerald-300 text-[10px] font-bold uppercase tracking-wider">
             <Leaf className="w-3 h-3" /> Your clean-air plan
           </span>
-          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 tracking-tight mt-1.5">
+          <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-1.5">
             Three things that change your exposure today
           </h2>
-          <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+          <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 mt-0.5">
             Tailored to {profile.name} · {airQuality.location} · commute by {profile.commuteType.replace(/_/g, ' ')}
           </p>
         </div>
@@ -128,10 +128,10 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
         {/* PILLAR 1 — low-emission daily routine */}
         <button
           onClick={() => onNavigate('planner')}
-          className="group text-left bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-forest-500 hover:shadow-md transition-all p-5 flex flex-col"
+          className="group text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-forest-500 dark:hover:border-emerald-600 hover:shadow-md transition-all p-5 flex flex-col"
         >
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-900">
+            <span className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-100">
               <span className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center">
                 <Clock className="w-4 h-4 text-amber-600" />
               </span>
@@ -140,7 +140,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-forest-700 transition-colors" />
           </div>
 
-          <p className="text-[11px] text-slate-500 mt-1">When to go out, when to stay in.</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">When to go out, when to stay in.</p>
 
           {/* Time-of-day risk bars */}
           <div className="flex items-end justify-between gap-2 h-24 mt-4">
@@ -160,14 +160,14 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
                       opacity: slot.timeOfDay === bestSlot.timeOfDay ? 1 : 0.45
                     }}
                   />
-                  <Icon className="w-3.5 h-3.5 text-slate-400" />
-                  <span className="text-[9px] text-slate-400">{SLOT_SHORT[slot.timeOfDay] ?? slot.timeOfDay}</span>
+                  <Icon className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                  <span className="text-[9px] text-slate-400 dark:text-slate-500">{SLOT_SHORT[slot.timeOfDay] ?? slot.timeOfDay}</span>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-[11px]">
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-[11px]">
             <div className="flex items-start gap-1.5 text-emerald-800">
               <span className="font-bold shrink-0">Best:</span>
               <span>{bestSlot.title} · {bestSlot.hours}</span>
@@ -178,7 +178,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             </div>
           </div>
 
-          <div className="mt-auto pt-3 text-[10px] font-bold text-forest-700 uppercase tracking-wider">
+          <div className="mt-auto pt-3 text-[10px] font-bold text-forest-700 dark:text-emerald-400 uppercase tracking-wider">
             Open 24h plan →
           </div>
         </button>
@@ -186,10 +186,10 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
         {/* PILLAR 2 — indoor air hacks */}
         <button
           onClick={() => onNavigate('indoor')}
-          className="group text-left bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-forest-500 hover:shadow-md transition-all p-5 flex flex-col"
+          className="group text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-forest-500 dark:hover:border-emerald-600 hover:shadow-md transition-all p-5 flex flex-col"
         >
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-900">
+            <span className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-100">
               <span className="w-7 h-7 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center">
                 <Home className="w-4 h-4 text-emerald-600" />
               </span>
@@ -198,7 +198,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-forest-700 transition-colors" />
           </div>
 
-          <p className="text-[11px] text-slate-500 mt-1">What's polluting your home, and the free fix.</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">What's polluting your home, and the free fix.</p>
 
           <div className="mt-3">
             <DonutChart
@@ -210,7 +210,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             />
           </div>
 
-          <div className="mt-auto pt-3 border-t border-slate-100 text-[11px] text-slate-700">
+          <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300">
             <div className="flex items-start gap-1.5">
               <span className="font-bold text-rose-700 shrink-0">Top risk:</span>
                                 <span className="truncate">
@@ -220,17 +220,17 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
                       .sort((a, b) => b.points - a.points)[0]?.label ?? 'No major source detected'}
                   </span>
             </div>
-            <div className="mt-1 text-[10px] font-bold text-forest-700 uppercase tracking-wider">Open indoor checks →</div>
+            <div className="mt-1 text-[10px] font-bold text-forest-700 dark:text-emerald-400 uppercase tracking-wider">Open indoor checks →</div>
           </div>
         </button>
 
         {/* PILLAR 3 — sustainable alternatives */}
         <button
           onClick={() => onNavigate('choices')}
-          className="group text-left bg-white rounded-2xl border border-slate-200 shadow-sm hover:border-forest-500 hover:shadow-md transition-all p-5 flex flex-col"
+          className="group text-left bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-forest-500 dark:hover:border-emerald-600 hover:shadow-md transition-all p-5 flex flex-col"
         >
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-2 text-xs font-bold text-slate-900">
+            <span className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-100">
               <span className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-200 flex items-center justify-center">
                 <Bike className="w-4 h-4 text-blue-600" />
               </span>
@@ -239,7 +239,7 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
             <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-forest-700 transition-colors" />
           </div>
 
-          <p className="text-[11px] text-slate-500 mt-1">CO₂ per km, lowest first. Pick your swap.</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">CO₂ per km, lowest first. Pick your swap.</p>
 
           <div className="mt-4 space-y-1.5">
             {MODE_LABELS.map((mode) => {
@@ -247,8 +247,8 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
               const isLow = mode.factor <= EMISSION_FACTORS.metroElectricBusKgCo2PerKm;
               return (
                 <div key={mode.label} className="flex items-center gap-2">
-                  <span className="w-16 sm:w-20 text-[10px] text-slate-600 truncate">{mode.label}</span>
-                  <div className="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                  <span className="w-16 sm:w-20 text-[10px] text-slate-600 dark:text-slate-300 truncate">{mode.label}</span>
+                  <div className="flex-1 h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <div
                       className="h-full rounded-full"
                       style={{
@@ -257,18 +257,18 @@ export const ActionPlan: React.FC<Props> = ({ airQuality, profile, slots, onNavi
                       }}
                     />
                   </div>
-                  <span className="w-9 text-right text-[10px] font-mono text-slate-500">{mode.factor.toFixed(3)}</span>
+                  <span className="w-9 text-right text-[10px] font-mono text-slate-500 dark:text-slate-400">{mode.factor.toFixed(3)}</span>
                 </div>
               );
             })}
           </div>
 
-          <div className="mt-auto pt-3 border-t border-slate-100">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+          <div className="mt-auto pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300">
               <TrendingDown className="w-3.5 h-3.5" />
               <span>Metro emits {metroVsCar}% less CO₂ per km than a petrol car</span>
             </div>
-            <div className="mt-1 text-[10px] font-bold text-forest-700 uppercase tracking-wider">Open cleaner swaps →</div>
+            <div className="mt-1 text-[10px] font-bold text-forest-700 dark:text-emerald-400 uppercase tracking-wider">Open cleaner swaps →</div>
           </div>
         </button>
       </div>

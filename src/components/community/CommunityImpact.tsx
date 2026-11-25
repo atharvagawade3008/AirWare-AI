@@ -55,15 +55,15 @@ export const CommunityImpact: React.FC = () => {
     <div className="space-y-6">
       
       {/* Header */}
-      <div className="bg-white rounded-2xl p-5 sm:p-6 border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-2 text-forest-800 text-xs font-bold uppercase tracking-wider">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-2 text-forest-800 dark:text-emerald-300 text-xs font-bold uppercase tracking-wider">
           <UsersRound className="w-4 h-4 text-emerald-600" />
           <span>Community Impact — Collective Environmental Responsibility</span>
         </div>
-        <h2 className="text-xl font-extrabold text-slate-900 tracking-tight font-sans mt-1">
+        <h2 className="text-xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-sans mt-1">
           Collective Action Powers Cleaner Urban Air
         </h2>
-        <p className="text-xs text-slate-600 mt-2 max-w-3xl leading-relaxed">
+        <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 max-w-3xl leading-relaxed">
           While individual actions protect personal health, collective community adoption of cleaner habits reduces overall urban particulate generation.
         </p>
       </div>
@@ -81,22 +81,22 @@ export const CommunityImpact: React.FC = () => {
             >
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 text-slate-600">
+                  <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                     {pledge.category}
                   </span>
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-forest-800">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-forest-800 dark:text-emerald-300">
                     <Award className="w-3.5 h-3.5 text-emerald-600" />
                     <span>{pledge.participantsCount.toLocaleString()} Pledged</span>
                   </div>
                 </div>
 
-                <h3 className="font-bold text-slate-900 text-base mt-3">{pledge.title}</h3>
-                <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">{pledge.description}</p>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-base mt-3">{pledge.title}</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">{pledge.description}</p>
               </div>
 
               <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
                 {isPledged ? (
-                  <span className="flex items-center gap-1.5 text-xs font-bold text-forest-900">
+                  <span className="flex items-center gap-1.5 text-xs font-bold text-forest-900 dark:text-emerald-300">
                     <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                     <span>Pledge Recorded for Your Household</span>
                   </span>
@@ -116,9 +116,9 @@ export const CommunityImpact: React.FC = () => {
       </div>
 
       {/* Community Education Note */}
-      <div className="bg-slate-50 rounded-2xl p-5 sm:p-6 border border-slate-200 text-xs text-slate-600 space-y-2">
-        <div className="font-bold text-slate-800 flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-emerald-700" />
+      <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 sm:p-6 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-300 space-y-2">
+        <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+          <ShieldCheck className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
           <span>Evidence-Based Community Engagement</span>
         </div>
         <p className="leading-relaxed">
