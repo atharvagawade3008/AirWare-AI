@@ -15,6 +15,7 @@ import { AIChatDrawer } from './components/assistant/AIChatDrawer.tsx';
 import { FamilyProfileModal } from './components/profile/FamilyProfileModal.tsx';
 import { ScenarioSwitcher } from './components/demo/ScenarioSwitcher.tsx';
 import { ActionPlan } from './components/plan/ActionPlan.tsx';
+import { ProductTour } from './components/onboarding/ProductTour.tsx';
 
 import { AirQualityContext, HourlyForecastPoint } from './types/air-quality.ts';
 import { WeatherContext } from './types/weather.ts';
@@ -24,8 +25,9 @@ import { CityLocation } from './services/api/geocoding.ts';
 import { fetchLiveEnvironmentalData } from './services/api/open-meteo.ts';
 import { getStoredProfile, saveStoredProfile, getStoredCity, saveStoredCity } from './services/storage/profile-store.ts';
 import { ThemeMode, getStoredTheme, applyTheme, saveTheme } from './services/storage/theme-store.ts';
+import { getTourStatus, saveTourStatus } from './services/storage/tour-store.ts';
 import { generatePersonalizedRecommendations } from './intelligence/recommendations/recommendation-engine.ts';
-import { AlertTriangle, RefreshCw, Sparkles, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Sparkles, ShieldCheck, HelpCircle } from 'lucide-react';
 
 export default function App() {
   // Navigation & Modal State
@@ -33,6 +35,7 @@ export default function App() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const [isScenarioModalOpen, setIsScenarioModalOpen] = useState(false);
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
   // Light / dark appearance
   const [theme, setTheme] = useState<ThemeMode>(getStoredTheme);
@@ -75,6 +78,22 @@ export default function App() {
     applyTheme(theme);
     saveTheme(theme);
   }, [theme]);
+
+  // Offer the guided tour once to first-time visitors.
+  useEffect(() => {
+    if (getTourStatus()) return;
+    const timer = window.setTimeout(() => setIsTourOpen(true), 900);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const handleCloseTour = useCallback((status: 'completed' | 'skipped') => {
+    saveTourStatus(status);
+    setIsTourOpen(false);
+    setActiveTab('overview');
+  }, []);
+
+  const handleOpenAssistant = useCallback(() => setIsAIChatOpen(true), []);
+  const handleCloseAssistant = useCallback(() => setIsAIChatOpen(false), []);
 
   // Initial load
   useEffect(() => {
@@ -216,24 +235,28 @@ export default function App() {
           <div className="space-y-6">
             
             {/* Guidance Banner */}
-            <GuidanceBanner
-              guidance={guidanceSummary}
-              profile={profile}
-              onOpenProfile={() => setIsProfileModalOpen(true)}
-              onNavigateToPlanner={() => setActiveTab('planner')}
-            />
+            <div id="tour-dashboard">
+              <GuidanceBanner
+                guidance={guidanceSummary}
+                profile={profile}
+                onOpenProfile={() => setIsProfileModalOpen(true)}
+                onNavigateToPlanner={() => setActiveTab('planner')}
+              />
+            </div>
 
             {/* Highlighted capability pillars + direct impact */}
-            <ActionPlan
-              airQuality={effectiveAQI}
-              profile={profile}
-              slots={exposurePlanner}
-              onNavigate={setActiveTab}
-            />
+            <div id="tour-routine">
+              <ActionPlan
+                airQuality={effectiveAQI}
+                profile={profile}
+                slots={exposurePlanner}
+                onNavigate={setActiveTab}
+              />
+            </div>
 
             {/* AQI Gauge + Weather Atmospheric Dispersion */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7">
+              <div className="lg:col-span-7" id="tour-aqi">
                 <AQIGauge airQuality={effectiveAQI} />
               </div>
               <div className="lg:col-span-5">
@@ -274,17 +297,23 @@ export default function App() {
 
         {/* Tab 4: INDOOR AIR DOCTOR */}
         {activeTab === 'indoor' && (
-          <IndoorAirDoctor airQuality={effectiveAQI} onBackToPlan={() => setActiveTab('overview')} />
+          <div id="tour-indoor">
+            <IndoorAirDoctor airQuality={effectiveAQI} onBackToPlan={() => setActiveTab('overview')} />
+          </div>
         )}
 
         {/* Tab 5: CLEANER CHOICES (Commute & Lifestyle) */}
         {activeTab === 'choices' && (
-          <CleanerChoices airQuality={effectiveAQI} onSelectAction={() => setActiveTab('impact')} />
+          <div id="tour-choices">
+            <CleanerChoices airQuality={effectiveAQI} onSelectAction={() => setActiveTab('impact')} />
+          </div>
         )}
 
         {/* Tab 6: WHAT-IF IMPACT CALCULATOR */}
         {activeTab === 'impact' && (
-          <WhatIfCalculator />
+          <div id="tour-impact">
+            <WhatIfCalculator />
+          </div>
         )}
 
         {/* Tab 7: COMMUNITY IMPACT */}
@@ -302,6 +331,12 @@ export default function App() {
             <span>• Breathe Smarter. Live Healthier.</span>
           </div>
           <div className="flex flex-wrap items-center gap-4 text-[11px]">
+            <button
+              onClick={() => setIsTourOpen(true)}
+              className="inline-flex items-center gap-1 font-semibold text-forest-700 dark:text-emerald-300 hover:text-forest-900 dark:hover:text-emerald-100 transition-colors"
+            >
+              <HelpCircle className="w-3.5 h-3.5" /> Take a Tour
+            </button>
             <span>Data: CPCB NAQI Standard &amp; Open-Meteo</span>
             <span>Zero Recurring Cost Architecture</span>
             <span className="font-mono text-forest-800 dark:text-emerald-300">India-First Engine</span>
@@ -329,8 +364,20 @@ export default function App() {
       {/* AI Assistant Drawer */}
       <AIChatDrawer
         isOpen={isAIChatOpen}
-        onClose={() => setIsAIChatOpen(false)}
+        onClose={handleCloseAssistant}
         context={airAwareContext}
+        guidanceSummary={guidanceSummary}
+        planner={exposurePlanner}
+      />
+
+      {/* First-visit / replayable product tour */}
+      <ProductTour
+        isOpen={isTourOpen}
+        onClose={handleCloseTour}
+        activeTab={activeTab}
+        onNavigate={setActiveTab}
+        onOpenAssistant={handleOpenAssistant}
+        onCloseAssistant={handleCloseAssistant}
       />
 
     </div>
