@@ -160,11 +160,12 @@ OPENAQ_API_KEY=
 
 ### How the AI is called (server-side only)
 ```
-Browser  ──POST──▶  /.netlify/functions/airaware-chat  ──@google/genai──▶  Gemini API
+Browser  ──POST──▶  /api/airaware-chat  (Vercel)
+                    /.netlify/functions/airaware-chat  (Netlify)  ──@google/genai──▶  Gemini API
 (AirAwareContext)   (validates, rate-limits, maps errors)                   (system instruction + app data)
 ```
 - The browser never sees the key and never calls Google directly.
-- The function validates the message (≤1500 chars), caps history at 6 turns, limits output tokens, applies a 22s timeout and a best-effort 8 requests/minute per IP limiter, and returns typed errors (`quota_exhausted`, `rate_limited`, `timeout`, `misconfigured`, `upstream_unavailable`).
+- The function validates the message (≤1500 chars), caps history at 6 turns, limits output tokens, applies a 12s per-model deadline inside a 20s total budget and a best-effort 8 requests/minute per IP limiter, and returns typed errors (`quota_exhausted`, `rate_limited`, `timeout`, `misconfigured`, `upstream_unavailable`).
 - If Gemini fails, the frontend answers from the deterministic CPCB engine and labels the message and reason honestly.
 
 ---
@@ -194,8 +195,8 @@ Deployable to Netlify with zero configuration via included `netlify.toml`:
 | `GEMINI_MODEL` | No (default `gemini-3.8-flash`) | Primary model |
 | `GEMINI_FALLBACK_MODEL` | No (default `gemini-3.5-flash`) | Used when the primary model returns 503 UNAVAILABLE or 429 (that model's daily quota is spent) |
 | `GEMINI_MAX_OUTPUT_TOKENS` | No (default `1024`) | Output cap per answer. Flash models spend thinking tokens from this cap, so keep room for the reply |
-| `GEMINI_TIMEOUT_MS` | No (default `8000`) | Per-model attempt timeout |
-| `GEMINI_TOTAL_BUDGET_MS` | No (default `18000`) | Total budget across primary + fallback |
+| `GEMINI_TIMEOUT_MS` | No (default `12000`, minimum `10000`) | Per-model request deadline; Gemini rejects anything shorter |
+| `GEMINI_TOTAL_BUDGET_MS` | No (default `20000`) | Total budget across primary + fallback, kept under the host function limit |
 
 ### Local development
 ```bash

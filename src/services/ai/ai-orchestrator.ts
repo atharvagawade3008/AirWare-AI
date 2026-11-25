@@ -1,42 +1,60 @@
-// AirAware AI — AI Orchestrator
-// Routes chat requests to WebLLM (browser inference) or the deterministic
-// CPCB engine. Gemini Cloud AI has been removed per design decision.
-
 import { AirAwareContext, AIResponse, ChatTurn } from '../../types/ai.ts';
 import { DailyGuidanceSummary, ExposurePlannerSlot } from '../../types/recommendation.ts';
 import { runDeterministicAI } from './deterministic-provider.ts';
+import { AIServiceError, askGemini } from './gemini-provider.ts';
+import { buildGeminiContext } from './context-builder.ts';
 
 export interface AirAwareAskOptions {
   guidanceSummary?: DailyGuidanceSummary;
   planner?: ExposurePlannerSlot[];
 }
 
-/**
- * Ask the deterministic CPCB engine. Always succeeds.
- * WebLLM chat is handled directly in AIChatDrawer — it streams and updates
- * its own state via the WebLLM provider. This function covers any code path
- * that needs a synchronous, guaranteed response (e.g., fallback inside
- * WebLLM failure handlers).
- */
+function fallbackNotice(error: AIServiceError): string {
+  switch (error.kind) {
+    case 'quota':
+      return 'Gemini usage limit reached — showing verified CPCB guidance. You can retry later.';
+    case 'rate_limited':
+      return 'Too many AI requests just now — showing verified CPCB guidance. Retry in a few seconds.';
+    case 'timeout':
+      return 'The AI request timed out — showing verified CPCB guidance. You can retry.';
+    case 'network':
+      return 'Could not reach Cloud AI — showing verified CPCB guidance. You can retry.';
+    case 'config':
+      return 'Cloud AI is not available right now — showing verified CPCB guidance. You can retry.';
+    case 'invalid':
+      return 'That question could not be processed — showing verified CPCB guidance instead.';
+    default:
+      return 'Cloud AI is temporarily unavailable — showing verified CPCB guidance. You can retry.';
+  }
+}
+
 export async function askAirAwareAI(
   context: AirAwareContext,
   userPrompt: string,
-  _history: ChatTurn[] = [],
-  _options: AirAwareAskOptions = {}
+  history: ChatTurn[] = [],
+  options: AirAwareAskOptions = {}
 ): Promise<AIResponse> {
   try {
-    return runDeterministicAI(context, userPrompt);
-  } catch (err: any) {
-    console.warn('[orchestrator] Deterministic engine error:', err?.message);
+    return await askGemini({
+      message: userPrompt,
+      history: history.slice(-6),
+      context: buildGeminiContext(context, options.guidanceSummary, options.planner)
+    });
+  } catch (error: any) {
+    const serviceError = error instanceof AIServiceError ? error : null;
+
+    if (!serviceError) {
+      console.warn('Unexpected AI failure; using deterministic engine.');
+    }
+
+    const deterministic = runDeterministicAI(context, userPrompt);
     return {
-      content:
-        'I was unable to generate a recommendation right now. Please check your location and profile settings.',
-      provider: 'deterministic',
-      modelName: 'CPCB Deterministic Engine',
-      latencyMs: 0,
+      ...deterministic,
       isFallback: true,
-      confidenceNote: 'Deterministic engine encountered an unexpected error.',
-      retryable: true
+      provider: 'deterministic',
+      confidenceNote: serviceError ? fallbackNotice(serviceError) : fallbackNotice(new AIServiceError('', 'unavailable', 0, true)),
+      errorKind: serviceError?.kind || 'unavailable',
+      retryable: serviceError ? serviceError.retryable : true
     };
   }
 }

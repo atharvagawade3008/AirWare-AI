@@ -59,7 +59,7 @@ Frontend path: `AIChatDrawer` → `askAirAwareAI` → `askGemini` → function. 
 | **Live Gemini request** (real key, real telemetry, AQI 132 Mumbai) | **200**, grounded answer quoting the supplied AQI |
 | **Live follow-up** (history included) | **200**, used the prior turn |
 | **Live stale-data turn** (AQI unavailable) | **200**, explicitly stated data unavailable |
-| Function over HTTP via `netlify dev` (`/.netlify/functions/airaware-chat`) | Route loads and validates; live calls returned 504 (Gemini stall) before per-model timeouts were added, then 429 once the free-tier quota was exhausted |
+| Function over HTTP via `netlify dev` (`/.netlify/functions/airaware-chat`) | **200** via `gemini-3.5-flash`: because free-tier quota is per model per day, `gemini-3.8-flash` returned 429 and the configured fallback model answered a complete, grounded reply |
 | Chat UI: send, fallback notice, retry | Drawer opens instantly; fallback answer labelled "Verified CPCB engine (AI unavailable)"; quota notice + working Retry |
 | Tour steps 1–8 | Each step spotlights the correct live component; steps 4/5/7 switch tabs, step 6 opens the assistant |
 | Tour skip | Overlay removed, dashboard interactive, `airaware_tour_status` = `skipped` |

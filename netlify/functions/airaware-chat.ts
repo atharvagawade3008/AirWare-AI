@@ -3,10 +3,14 @@
 import { GoogleGenAI } from '@google/genai';
 
 const MODEL = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
-// Tried when the primary model answers 503 UNAVAILABLE (demand spike) or 429
-// (that model's daily free-tier quota is spent).
-// Stays on a free-tier Flash model; never switches to a paid model.
-const FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash';
+// Tried when the primary model answers 503 UNAVAILABLE (demand spike) or 429 (that
+// model's free-tier quota or rate limit is spent). Comma-separated, because quota and
+// rate limits apply per model, so each extra free Flash model adds real capacity.
+// Stays on free-tier Flash models; never switches to a paid model.
+const FALLBACK_MODELS = (process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.5-flash')
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean);
 // Flash models spend "thinking" tokens from this same cap, which truncated answers
 // at 512. 1024 leaves room for the reply even when a model ignores thinkingBudget.
 const MAX_OUTPUT_TOKENS = Number(process.env.GEMINI_MAX_OUTPUT_TOKENS || 1024);
@@ -20,10 +24,11 @@ const REQUEST_TIMEOUT_MS = Math.max(
 );
 // How long to wait for the primary model before trying the fallback model, so a
 // stalled primary cannot eat the whole invocation and strand the fallback.
-const PRIMARY_ATTEMPT_MS = Number(process.env.GEMINI_PRIMARY_ATTEMPT_MS || 5000);
-// Stays under Netlify's synchronous function limit so the user always gets an
-// answer (real AI reply or labelled CPCB fallback) instead of a dead request.
-const TOTAL_BUDGET_MS = Number(process.env.GEMINI_TOTAL_BUDGET_MS || 9500);
+const PRIMARY_ATTEMPT_MS = Number(process.env.GEMINI_PRIMARY_ATTEMPT_MS || 6000);
+// Total budget across every model attempt. Kept under the host's function limit
+// (api/airaware-chat.ts sets maxDuration 30) so the caller always gets an answer —
+// a real AI reply or the labelled CPCB fallback — instead of a dead request.
+const TOTAL_BUDGET_MS = Number(process.env.GEMINI_TOTAL_BUDGET_MS || 20000);
 const MAX_MESSAGE_CHARS = 1500;
 const MAX_HISTORY_TURNS = 6;
 const MAX_POLLUTANTS = 8;
@@ -228,6 +233,13 @@ function clientKey(headers: Record<string, string | undefined>): string {
 // Best effort only: Netlify may run several function instances, each with its own memory.
 const requestLog = new Map<string, number[]>();
 
+// Free-tier quota is per project, per model and per day. Remember which model just
+// answered 429 so later requests start with a model that still has quota instead of
+// spending the attempt budget on a model that cannot answer.
+const quotaBlockedAt = new Map<string, number>();
+// Short, because a 429 is often a per-minute limit that clears within a minute.
+const QUOTA_BLOCK_TTL_MS = 60_000;
+
 function isRateLimited(key: string): boolean {
   const now = Date.now();
   const recent = (requestLog.get(key) || []).filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
@@ -340,7 +352,10 @@ export async function handler(event: any) {
           config: { ...baseConfig, thinkingConfig: { thinkingBudget: 0 } }
         } as any);
       } catch (error: any) {
-        if (upstreamStatus(error) === 400 && /thinking/i.test(String(error?.message || ''))) {
+        if (upstreamStatus(error) === 400) {
+          // Not every model accepts an explicit thinking budget (lite models reject
+          // it as an invalid argument). Retry this model once without the optional
+          // field; if it still fails, the caller moves on to the next model.
           return ai.models.generateContent({ model, contents, config: baseConfig } as any);
         }
         throw error;
@@ -357,30 +372,44 @@ export async function handler(event: any) {
     // model does not mean the key is dead: the next Flash model has its own daily
     // bucket. 429 therefore counts as transient inside this loop only. If every
     // model is exhausted, the last error is still mapped to quota_exhausted below.
-    const models = Array.from(new Set([MODEL, FALLBACK_MODEL].filter(Boolean)));
+    const models = Array.from(new Set([MODEL, ...FALLBACK_MODELS].filter(Boolean)));
+    const attempts = [...models].sort((a, b) => {
+      const checkAt = Date.now();
+      const aBlocked = checkAt - (quotaBlockedAt.get(a) ?? 0) < QUOTA_BLOCK_TTL_MS;
+      const bBlocked = checkAt - (quotaBlockedAt.get(b) ?? 0) < QUOTA_BLOCK_TTL_MS;
+      return Number(aBlocked) - Number(bBlocked);
+    });
+
     const startedAt = Date.now();
     let response: any;
     let servedModel = MODEL;
     let lastError: any;
 
-    for (let index = 0; index < models.length; index += 1) {
-      const model = models[index];
+    for (let index = 0; index < attempts.length; index += 1) {
+      const model = attempts[index];
       const remaining = TOTAL_BUDGET_MS - (Date.now() - startedAt);
       if (response || remaining < 1500) break;
 
       const attemptMs = Math.min(
-        index === 0 && models.length > 1 ? PRIMARY_ATTEMPT_MS : REQUEST_TIMEOUT_MS,
+        index === 0 && attempts.length > 1 ? PRIMARY_ATTEMPT_MS : REQUEST_TIMEOUT_MS,
         remaining
       );
 
       try {
         response = await withTimeout(generate(model), attemptMs);
         servedModel = model;
+        quotaBlockedAt.delete(model);
       } catch (error: any) {
         lastError = error;
         const status = upstreamStatus(error);
         const errorText = String(error?.message || '');
+        if (status === 429 || /RESOURCE_EXHAUSTED|quota/i.test(errorText)) {
+          quotaBlockedAt.set(model, Date.now());
+        }
+        // 400 is per-model here (a config field that model does not accept), so it
+        // moves on to the next model instead of failing the whole request.
         const transient =
+          status === 400 ||
           status === 429 ||
           status === 503 ||
           status === 504 ||
@@ -405,9 +434,14 @@ export async function handler(event: any) {
     const errorText = String(error?.message || '');
 
     if (status === 429 || errorText.includes('RESOURCE_EXHAUSTED')) {
+      // The free tier limits both requests-per-minute and requests-per-day. Only the
+      // daily bucket means "come back tomorrow"; a per-minute limit clears quickly.
+      const dailyLimit = /PerDay|per day/i.test(errorText);
       return json(429, {
-        error: 'AirAware AI has reached its current Gemini usage limit. Verified CPCB guidance is still available.',
-        code: 'quota_exhausted'
+        error: dailyLimit
+          ? 'AirAware AI has reached its current Gemini usage limit. Verified CPCB guidance is still available.'
+          : 'AirAware AI is handling a lot of requests right now. Please retry in a few seconds.',
+        code: dailyLimit ? 'quota_exhausted' : 'rate_limited'
       });
     }
 
@@ -436,7 +470,12 @@ export async function handler(event: any) {
       });
     }
 
-    console.error('[airaware-chat] Unexpected AI failure (HTTP %s).', status ?? 'n/a');
+    // Safe diagnostic: status and the upstream message only, never the key.
+    console.error(
+      '[airaware-chat] Unexpected AI failure (HTTP %s): %s',
+      status ?? 'n/a',
+      errorText.replace(/\s+/g, ' ').slice(0, 240)
+    );
     return json(500, {
       error: 'The AI service could not process this request. Please try again.',
       code: 'internal_error'
